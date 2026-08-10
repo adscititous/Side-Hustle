@@ -14,11 +14,18 @@ export default async function ConversationPage({ params }: Props) {
 
   const { data: conversation } = await supabase
     .from("conversations")
-    .select("*, listing:listings(*), buyer:profiles(*), seller:profiles(*)")
+    .select(`*,listing:listings(*),buyer:profiles!buyer_id(*),seller:profiles!seller_id(*)`)
     .eq("id", id)
     .single();
 
+console.log("Route ID:", id);
+console.log("Conversation:", conversation);
+
   if (!conversation) notFound();
+
+  console.log("Logged in user:", userData.user.id);
+console.log("Buyer:", conversation.buyer_id);
+console.log("Seller:", conversation.seller_id);
 
   const isParticipant =
     conversation.buyer_id === userData.user.id ||

@@ -48,6 +48,8 @@ export function ListingDetailClient({ listing, reviews }: Props) {
       .select("id")
       .eq("id", userData.user.id)
       .single();
+      console.log("Profile:", profile);
+console.log("User ID:", userData.user.id);
     if (!profile) return;
 
     if (profile.id === listing.seller_id) {
@@ -82,7 +84,7 @@ export function ListingDetailClient({ listing, reviews }: Props) {
       }
       convId = conv!.id;
     }
-
+console.log("Conversation ID:", convId);
     router.push(`/messages/${convId}`);
   }
 
