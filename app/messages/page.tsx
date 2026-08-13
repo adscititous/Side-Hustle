@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -7,16 +8,15 @@ export const dynamic = "force-dynamic";
 
 export default async function MessagesPage() {
   const supabase = await createServerSupabase();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/auth");
+  const { userId } = await auth();
+if (!userId) redirect("/sign-in");
 
   const { data: conversations } = await supabase
     .from("conversations")
     .select("*, listing:listings(id, title, images), buyer:profiles!buyer_id(*), seller:profiles!seller_id(*)")
-    .or(`buyer_id.eq.${userData.user.id},seller_id.eq.${userData.user.id}`)
+    .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
     .order("last_message_at", { ascending: false });
 
-  const userId = userData.user.id;
 
   return (
     <div>

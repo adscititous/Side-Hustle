@@ -2,28 +2,20 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
-import type { User } from "@supabase/supabase-js";
 
 export function Navbar() {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isLoaded } = useUser();
+  const { signOut } = useClerk();
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => sub?.subscription.unsubscribe();
-  }, []);
-
   async function handleSignOut() {
-    await supabase.auth.signOut();
+    await signOut();
     setMenuOpen(false);
     router.refresh();
     router.push("/");
@@ -63,7 +55,7 @@ export function Navbar() {
                   onClick={() => setMenuOpen(!menuOpen)}
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-700"
                 >
-                  {user.email?.[0].toUpperCase()}
+                  {user.primaryEmailAddress?.emailAddress?.[0].toUpperCase()}
                 </button>
                 {menuOpen && (
                   <>
@@ -73,7 +65,7 @@ export function Navbar() {
                     />
                     <div className="absolute right-0 z-20 mt-2 w-48 rounded-lg border border-stone-200 bg-white py-1 shadow-lg">
                       <div className="border-b border-stone-100 px-3 py-2 text-xs text-stone-500">
-                        {user.email}
+                        {user.primaryEmailAddress?.emailAddress}
                       </div>
                       <Link
                         href="/profile"

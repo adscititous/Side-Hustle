@@ -2,57 +2,150 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSignIn, useSignUp } from "@clerk/nextjs";
 import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { signUp } = useSignUp();
+  const [verificationCode, setVerificationCode] = useState("");
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const { signIn } = useSignIn();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    const supabase = createClient();
-
+  try {
     if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
-        email,
+      const { error } = await signUp.password({
+        emailAddress: email,
         password,
-        options: { emailRedirectTo: `${location.origin}/auth/callback` },
       });
+
       if (error) {
         toast.error(error.message);
-      } else {
-        toast.success("Check your email to confirm your account!");
+        return;
       }
-    } else {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) {
-        toast.error(error.message);
-      } else {
-        router.refresh();
+
+      if (signUp.status === "complete") {
+        const { error: finalizeError } = await signUp.finalize();
+
+        if (finalizeError) {
+          toast.error(finalizeError.message);
+          return;
+        }
+
         router.push("/");
+        return;
       }
+
+      const { error: verificationError } =
+        await signUp.verifications.sendEmailCode();
+
+      if (verificationError) {
+        toast.error(verificationError.message);
+        return;
+      }
+
+      setPendingVerification(true);
+      toast.success("Verification code sent to your email!");
+      return;
     }
 
+    const { error } = await signIn.password({
+      emailAddress: email,
+      password,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    if (signIn.status === "complete") {
+      const { error: finalizeError } = await signIn.finalize();
+
+      if (finalizeError) {
+        toast.error(finalizeError.message);
+        return;
+      }
+
+      router.push("/");
+    }
+  } catch (error) {
+    toast.error(
+      error instanceof Error ? error.message : "Something went wrong"
+    );
+  } finally {
     setLoading(false);
   }
+}
+
+async function handleVerifyCode(e: React.FormEvent) {
+  e.preventDefault();
+  setLoading(true);
+
+  try {
+    if (!signUp) {
+      toast.error("Sign-up is not ready. Please try again.");
+      return;
+    }
+
+    const { error } = await signUp.verifications.verifyEmailCode({
+      code: verificationCode,
+    });
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    if (signUp.status === "complete") {
+      const { error: finalizeError } = await signUp.finalize();
+
+      if (finalizeError) {
+        toast.error(finalizeError.message);
+        return;
+      }
+
+      router.push("/");
+      return;
+    }
+
+    toast.error("Verification could not be completed.");
+  } catch (error) {
+    toast.error(
+      error instanceof Error ? error.message : "Verification failed"
+    );
+  } finally {
+    setLoading(false);
+  }
+}
 
   async function handleGoogleSignIn() {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${location.origin}/auth/callback` },
+  try {
+    const { error } = await signIn.sso({
+      strategy: "oauth_google",
+      redirectUrl: "/auth/callback",
+      redirectCallbackUrl: "/auth/callback",
     });
-    if (error) toast.error(error.message);
+
+    if (error) {
+      toast.error(error.message);
+    }
+  } catch (error) {
+    toast.error(
+      error instanceof Error ? error.message : "Google sign-in failed"
+    );
   }
+}
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center">
@@ -66,7 +159,7 @@ export default function AuthPage() {
             : "Create an account to start buying and selling"}
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {!pendingVerification ? (<form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-stone-700">
               Email
@@ -104,6 +197,35 @@ export default function AuthPage() {
                 : "Create Account"}
           </button>
         </form>
+      
+) : (
+  <form onSubmit={handleVerifyCode} className="space-y-4">
+    <div>
+      <label className="block text-sm font-medium text-stone-700">
+        Verification Code
+      </label>
+
+      <input
+        type="text"
+        inputMode="numeric"
+        maxLength={6}
+        required
+        value={verificationCode}
+        onChange={(e) => setVerificationCode(e.target.value)}
+        className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+        placeholder="Enter the code from your email"
+      />
+    </div>
+
+    <button
+      type="submit"
+      disabled={loading}
+      className="w-full rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-700 disabled:opacity-50"
+    >
+      {loading ? "Verifying..." : "Verify Email"}
+    </button>
+  </form>
+)}
 
         <div className="my-6 flex items-center gap-3">
           <div className="h-px flex-1 bg-stone-200" />

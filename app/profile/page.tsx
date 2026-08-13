@@ -1,3 +1,4 @@
+import { auth } from "@clerk/nextjs/server";
 import { createServerSupabase } from "@/lib/supabase-server";
 import { redirect } from "next/navigation";
 import { ProfileClient } from "@/components/ProfileClient";
@@ -6,13 +7,13 @@ export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
   const supabase = await createServerSupabase();
-  const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) redirect("/auth");
+  const { userId } = await auth();
+  if (!userId) redirect("/sign-in");
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", userData.user.id)
+    .eq("id", userId)
     .single();
 
   if (!profile) redirect("/auth");

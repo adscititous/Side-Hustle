@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
+import { useUser } from "@clerk/nextjs";
 import toast from "react-hot-toast";
 import type { Category, Condition } from "@/types";
 import { CATEGORY_LABELS, CONDITION_LABELS } from "@/types";
-import { useUser } from "@clerk/nextjs";
 
-export default function NewListingPage() {
-  const router = useRouter();
-  const supabase = createClient();
-  const { user, isLoaded } = useUser();
+export default function EditListingPage() {
+ const router = useRouter();
+const supabase = createClient();
+const { user, isLoaded } = useUser();
+const params = useParams();
+const listingId = params.id as string;
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -22,21 +24,54 @@ export default function NewListingPage() {
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
+
+  useEffect(() => {
+    async function fetchListing() {
+      setFetching(true);
+      const { data, error } = await supabase
+        .from("listings")
+        .select("*")
+        .eq("id", listingId)
+        .single();
+
+      if (error) {
+        toast.error(error.message);
+        setFetching(false);
+        return;
+      }
+
+      if (data) {
+        setTitle(data.title);
+        setDescription(data.description);
+        setPrice(data.price.toString());
+        setCategory(data.category);
+        setCondition(data.condition || "");
+        setPaymentMethod(data.payment_method);
+        setIsAnonymous(data.is_anonymous);
+        setImages([]);
+      }
+
+      setFetching(false);
+    }
+
+    fetchListing();
+  }, [listingId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
 
-   if (!isLoaded) {
-    setLoading(false);
-    return;
-  }
+    if (!isLoaded) {
+  setLoading(false);
+  return;
+}
 
-  if (!user) {
-    toast.error("Please sign in first");
-    setLoading(false);
-    return;
-  }
+if (!user) {
+  toast.error("Please sign in first");
+  setLoading(false);
+  return;
+}
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -71,7 +106,7 @@ export default function NewListingPage() {
       imageUrls.push(urlData.publicUrl);
     }
 
-    const { error } = await supabase.from("listings").insert({
+    const { error } = await supabase.from("listings").update({
       seller_id: profile.id,
       title,
       description,
@@ -81,7 +116,7 @@ export default function NewListingPage() {
       payment_method: paymentMethod,
       images: imageUrls,
       is_anonymous: isAnonymous,
-    });
+    }).eq("id", listingId);
 
     if (error) {
       toast.error(error.message);

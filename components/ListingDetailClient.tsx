@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { createClient } from "@/lib/supabase";
 import { formatPrice, timeAgo } from "@/lib/utils";
 import type { Listing, Review, Category, Condition } from "@/types";
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function ListingDetailClient({ listing, reviews }: Props) {
+  const { user } = useUser();
   const [userId, setUserId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [contactInfo, setContactInfo] = useState<string | null>(null);
@@ -26,10 +28,8 @@ export function ListingDetailClient({ listing, reviews }: Props) {
   const supabase = createClient();
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id ?? null);
-    });
-  }, []);
+  setUserId(user?.id ?? null);
+}, [user]);
 
   const isOwner = userId === listing.seller_id;
   const sellerName = listing.is_anonymous
@@ -37,19 +37,18 @@ export function ListingDetailClient({ listing, reviews }: Props) {
     : listing.seller?.display_name ?? "Unknown";
 
   async function handleMessage() {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) {
-      router.push("/auth");
-      return;
-    }
+    
+    if (!user) {toast.error("Please sign in first");
+  return;
+}
 
     const { data: profile } = await supabase
       .from("profiles")
       .select("id")
-      .eq("id", userData.user.id)
+      .eq("id", user.id)
       .single();
       console.log("Profile:", profile);
-console.log("User ID:", userData.user.id);
+console.log("User ID:", user.id);
     if (!profile) return;
 
     if (profile.id === listing.seller_id) {
