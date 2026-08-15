@@ -1,7 +1,8 @@
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-export async function middleware(request: NextRequest) {
+export default clerkMiddleware(async (_auth, request: NextRequest) => {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -13,29 +14,32 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(
-  cookiesToSet: Array<{
-    name: string;
-    value: string;
-    options?: Parameters<typeof supabaseResponse.cookies.set>[2];
-  }>
-) {
+          cookiesToSet: Array<{
+            name: string;
+            value: string;
+            options?: Parameters<typeof supabaseResponse.cookies.set>[2];
+          }>
+        ) {
           cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
+            request.cookies.set(name, value)
           );
+
           supabaseResponse = NextResponse.next({ request });
+
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
+            supabaseResponse.cookies.set(name, value, options)
           );
         },
       },
-    },
+    }
   );
 
   return supabaseResponse;
-}
+});
 
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/__clerk/(.*)",
   ],
 };
