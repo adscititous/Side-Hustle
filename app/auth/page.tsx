@@ -9,6 +9,8 @@ import toast from "react-hot-toast";
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const { signUp } = useSignUp();
   const [verificationCode, setVerificationCode] = useState("");
   const [pendingVerification, setPendingVerification] = useState(false);
@@ -25,9 +27,10 @@ export default function AuthPage() {
   try {
     if (mode === "signup") {
       const { error } = await signUp.password({
-        emailAddress: email,
-        password,
-      });
+  emailAddress: email,
+  password,
+  username,
+});
 
       if (error) {
         toast.error(error.message);
@@ -99,15 +102,22 @@ async function handleVerifyCode(e: React.FormEvent) {
     }
 
     const { error } = await signUp.verifications.verifyEmailCode({
-      code: verificationCode,
-    });
+  code: verificationCode,
+});
 
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+if (error) {
+  console.error("VERIFY ERROR:", error);
+  toast.error(error.message);
+  return;
+}
 
-    if (signUp.status === "complete") {
+console.log("SIGNUP STATUS AFTER OTP:", signUp.status);
+console.log("SIGNUP MISSING FIELDS:", signUp.missingFields);
+console.log("SIGNUP UNVERIFIED FIELDS:", signUp.unverifiedFields);
+console.log("SIGNUP REQUIRED FIELDS:", signUp.requiredFields);
+console.log("SIGNUP OBJECT:", signUp);
+
+if (signUp.status === "complete") {
       const { error: finalizeError } = await signUp.finalize();
 
       if (finalizeError) {
@@ -160,31 +170,62 @@ async function handleVerifyCode(e: React.FormEvent) {
         </p>
 
         {!pendingVerification ? (<form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-stone-700">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-stone-700">
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
-            />
-          </div>
+
+  {mode === "signup" && (
+    <div>
+      <label className="block text-sm font-medium text-stone-700">
+        Username
+      </label>
+
+      <input
+        type="text"
+        required
+        minLength={4}
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+        placeholder="Choose a username"
+      />
+    </div>
+  )}
+
+  <div>
+    <label className="block text-sm font-medium text-stone-700">
+      Email
+    </label>
+
+    <input
+      type="email"
+      required
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+      className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+    />
+  </div>
+<div>
+  <label className="block text-sm font-medium text-stone-700">
+    Password
+  </label>
+
+  <div className="relative mt-1">
+    <input
+      type={showPassword ? "text" : "password"}
+      required
+      minLength={6}
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      className="w-full rounded-lg border border-stone-300 px-3 py-2 pr-16 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+    />
+
+    <button
+      type="button"
+      onClick={() => setShowPassword(!showPassword)}
+      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium text-stone-500 hover:text-stone-700"
+    >
+      {showPassword ? "Hide" : "Show"}
+    </button>
+  </div>
+</div>
           <button
             type="submit"
             disabled={loading}
