@@ -1,15 +1,17 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
+import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/Navbar";
+import { ProfileEnsurer } from "@/components/ProfileEnsurer";
 
 const inter = Inter({ subsets: ["latin"] });
-const playfair = Playfair_Display({
+const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["600", "700", "800"],
+  weight: ["600", "700"],
+  style: ["normal"],
 });
 
 export const metadata: Metadata = {
@@ -24,8 +26,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} ${playfair.variable}`}>
+      <body className={`${inter.className} ${fraunces.variable}`}>
         <ClerkProvider>
+          <ProfileEnsurer />
           <Navbar />
           <main className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6 lg:px-8">
             {children}
