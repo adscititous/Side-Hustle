@@ -33,7 +33,7 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-3">
-          {user ? (
+          {!isLoaded ? null : user ? (
             <>
               <Link
                 href="/listings/new"

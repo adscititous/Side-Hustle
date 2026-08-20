@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useSignIn, useSignUp } from "@clerk/nextjs";
 import toast from "react-hot-toast";
 
+export const dynamic = "force-dynamic";
+
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
