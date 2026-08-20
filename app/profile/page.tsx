@@ -9,11 +9,12 @@ export default async function ProfilePage() {
   const supabase = await createServerSupabase();
   const { userId } = await auth();
   if (!userId) redirect("/sign-in");
+  console.log("CLERK USER ID:", userId);
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", userId)
+    .eq("clerk_id", userId)
     .single();
 
   if (!profile) redirect("/auth");

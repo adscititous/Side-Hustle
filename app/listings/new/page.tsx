@@ -6,12 +6,13 @@ import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import type { Category, Condition } from "@/types";
 import { CATEGORY_LABELS, CONDITION_LABELS } from "@/types";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useSession } from "@clerk/nextjs";
 
 export default function NewListingPage() {
   const router = useRouter();
-  const supabase = createClient();
   const { user, isLoaded } = useUser();
+  const { session } = useSession();
+  const supabase = createClient(session);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -41,7 +42,7 @@ export default function NewListingPage() {
     const { data: profile } = await supabase
       .from("profiles")
       .select("id")
-      .eq("id", user.id)
+      .eq("clerk_id", user.id)
       .single();
 
     if (!profile) {

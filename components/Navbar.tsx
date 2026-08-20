@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import { useUser, useClerk } from "@clerk/nextjs";
+import { useUser, useClerk, useSession } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
 
 export function Navbar() {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
+  const { session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-  const supabase = createClient();
+  const supabase = createClient(session);
 
   async function handleSignOut() {
     await signOut();

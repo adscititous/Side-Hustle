@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSignIn, useSignUp } from "@clerk/nextjs";
-import { createClient } from "@/lib/supabase";
 import toast from "react-hot-toast";
 
 export default function AuthPage() {
@@ -18,7 +17,23 @@ export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+
+  async function ensureProfile(clerkUserId: string, userEmail: string) {
+    try {
+      const res = await fetch("/api/profile/ensure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clerkUserId, email: userEmail }),
+      });
+
+      if (!res.ok) {
+        const { error } = await res.json();
+        console.error("PROFILE ENSURE ERROR:", error);
+      }
+    } catch (error) {
+      console.error("PROFILE ENSURE ERROR:", error);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
   e.preventDefault();
@@ -43,6 +58,10 @@ export default function AuthPage() {
         if (finalizeError) {
           toast.error(finalizeError.message);
           return;
+        }
+
+        if (signUp.createdUserId) {
+          await ensureProfile(signUp.createdUserId, email);
         }
 
         router.push("/");
@@ -123,6 +142,10 @@ if (signUp.status === "complete") {
       if (finalizeError) {
         toast.error(finalizeError.message);
         return;
+      }
+
+      if (signUp.createdUserId) {
+        await ensureProfile(signUp.createdUserId, email);
       }
 
       router.push("/");

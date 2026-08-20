@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
+import { useUser, useSession } from "@clerk/nextjs";
 import { createClient } from "@/lib/supabase";
 import { formatPrice, timeAgo } from "@/lib/utils";
 import type { Listing, Review, Category, Condition } from "@/types";
@@ -20,18 +21,33 @@ interface Props {
 
 export function ListingDetailClient({ listing, reviews }: Props) {
   const { user } = useUser();
-  const [userId, setUserId] = useState<string | null>(null);
+  const { session } = useSession();
+  const [profileId, setProfileId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [contactInfo, setContactInfo] = useState<string | null>(null);
   const [showReviews, setShowReviews] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = createClient(session);
 
   useEffect(() => {
-  setUserId(user?.id ?? null);
-}, [user]);
+    if (!user) {
+      setProfileId(null);
+      return;
+    }
 
-  const isOwner = userId === listing.seller_id;
+    const loadProfileId = async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("clerk_id", user.id)
+        .single();
+      setProfileId(profile?.id ?? null);
+    };
+
+    loadProfileId();
+  }, [user]);
+
+  const isOwner = profileId === listing.seller_id;
   const sellerName = listing.is_anonymous
     ? listing.seller?.pseudonym_id ?? "Anonymous"
     : listing.seller?.display_name ?? "Unknown";
@@ -45,7 +61,7 @@ export function ListingDetailClient({ listing, reviews }: Props) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("id")
-      .eq("id", user.id)
+      .eq("clerk_id", user.id)
       .single();
       console.log("Profile:", profile);
 console.log("User ID:", user.id);
@@ -230,23 +246,31 @@ console.log("Conversation ID:", convId);
               </button>
             )}
             {isOwner && (
-              <button
-                onClick={async () => {
-                  if (
-                    !confirm("Mark this listing as sold? It will be hidden from the feed.")
-                  )
-                    return;
-                  await supabase
-                    .from("listings")
-                    .update({ status: "sold" })
-                    .eq("id", listing.id);
-                  toast.success("Marked as sold");
-                  router.refresh();
-                }}
-                className="flex-1 rounded-lg border border-stone-300 px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
-              >
-                Mark as Sold
-              </button>
+              <>
+                <Link
+                  href={`/listings/edit/${listing.id}`}
+                  className="flex-1 rounded-lg bg-brand-600 px-4 py-2.5 text-center text-sm font-medium text-white transition hover:bg-brand-700"
+                >
+                  Edit
+                </Link>
+                <button
+                  onClick={async () => {
+                    if (
+                      !confirm("Mark this listing as sold? It will be hidden from the feed.")
+                    )
+                      return;
+                    await supabase
+                      .from("listings")
+                      .update({ status: "sold" })
+                      .eq("id", listing.id);
+                    toast.success("Marked as sold");
+                    router.refresh();
+                  }}
+                  className="flex-1 rounded-lg border border-stone-300 px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+                >
+                  Mark as Sold
+                </button>
+              </>
             )}
           </div>
         </div>

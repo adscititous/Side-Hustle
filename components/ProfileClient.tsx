@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "@clerk/nextjs";
 import { createClient } from "@/lib/supabase";
 import type { Profile, Listing } from "@/types";
 import { CATEGORY_LABELS, CONDITION_LABELS } from "@/types";
@@ -19,7 +20,8 @@ export function ProfileClient({ profile, listings }: Props) {
   const [displayName, setDisplayName] = useState(profile.display_name);
   const [saving, setSaving] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const { session } = useSession();
+  const supabase = createClient(session);
 
   async function handleSave() {
     setSaving(true);

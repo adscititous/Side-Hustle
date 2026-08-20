@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSession } from "@clerk/nextjs";
 import { createClient } from "@/lib/supabase";
 import { formatPrice, timeAgo } from "@/lib/utils";
 import Link from "next/link";
@@ -41,7 +42,8 @@ export function ChatClient({ conversation, userId }: Props) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const supabase = createClient();
+  const { session } = useSession();
+  const supabase = createClient(session);
 
   const isBuyer = conversation.buyer.id === userId;
   const other = isBuyer ? conversation.seller : conversation.buyer;

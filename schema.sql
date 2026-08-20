@@ -2,7 +2,8 @@
 
 -- 1. PROFILES (extends auth.users)
 create table if not exists public.profiles (
-  id uuid primary key references auth.users on delete cascade,
+  id uuid primary key,
+  clerk_id text constraint profiles_clerk_id_unique unique,
   display_name text not null,
   avatar_url text,
   is_anonymous boolean not null default true,
@@ -18,11 +19,20 @@ create policy "Profiles are viewable by authenticated users"
 
 create policy "Users can insert their own profile"
   on public.profiles for insert
-  with check (auth.uid() = id);
+  with check (auth.jwt()->>'sub' = clerk_id);
 
 create policy "Users can update their own profile"
   on public.profiles for update
-  using (auth.uid() = id);
+  using (auth.jwt()->>'sub' = clerk_id);
+
+-- 1b. CLERK AUTH HELPER
+create or replace function public.clerk_profile_id()
+returns uuid
+language sql
+stable
+as $$
+  select id from public.profiles where clerk_id = auth.jwt()->>'sub'
+$$;
 
 -- 2. LISTINGS
 create table if not exists public.listings (
@@ -45,19 +55,19 @@ alter table public.listings enable row level security;
 
 create policy "Anyone can view active listings"
   on public.listings for select
-  using (status = 'active' or auth.uid() = seller_id);
+  using (status = 'active' or seller_id = public.clerk_profile_id());
 
 create policy "Authenticated users can create listings"
   on public.listings for insert
-  with check (auth.uid() = seller_id);
+  with check (seller_id = public.clerk_profile_id());
 
 create policy "Sellers can update their own listings"
   on public.listings for update
-  using (auth.uid() = seller_id);
+  using (seller_id = public.clerk_profile_id());
 
 create policy "Sellers can delete their own listings"
   on public.listings for delete
-  using (auth.uid() = seller_id);
+  using (seller_id = public.clerk_profile_id());
 
 -- 3. CONVERSATIONS
 create table if not exists public.conversations (
@@ -74,11 +84,11 @@ alter table public.conversations enable row level security;
 
 create policy "Participants can view conversations"
   on public.conversations for select
-  using (auth.uid() = buyer_id or auth.uid() = seller_id);
+  using (buyer_id = public.clerk_profile_id() or seller_id = public.clerk_profile_id());
 
 create policy "Participants can create conversations"
   on public.conversations for insert
-  with check (auth.uid() = buyer_id);
+  with check (buyer_id = public.clerk_profile_id());
 
 -- 4. MESSAGES
 create table if not exists public.messages (
@@ -98,18 +108,18 @@ create policy "Participants can view messages"
     exists (
       select 1 from public.conversations
       where id = messages.conversation_id
-      and (buyer_id = auth.uid() or seller_id = auth.uid())
+      and (buyer_id = public.clerk_profile_id() or seller_id = public.clerk_profile_id())
     )
   );
 
 create policy "Participants can insert messages"
   on public.messages for insert
   with check (
-    auth.uid() = sender_id and
+    sender_id = public.clerk_profile_id() and
     exists (
       select 1 from public.conversations
       where id = messages.conversation_id
-      and (buyer_id = auth.uid() or seller_id = auth.uid())
+      and (buyer_id = public.clerk_profile_id() or seller_id = public.clerk_profile_id())
     )
   );
 
@@ -119,7 +129,7 @@ create policy "Participants can mark messages as read"
     exists (
       select 1 from public.conversations
       where id = messages.conversation_id
-      and (buyer_id = auth.uid() or seller_id = auth.uid())
+      and (buyer_id = public.clerk_profile_id() or seller_id = public.clerk_profile_id())
     )
   );
 
@@ -143,7 +153,7 @@ create policy "Reviews are viewable by authenticated users"
 
 create policy "Buyers can create reviews"
   on public.reviews for insert
-  with check (auth.uid() = reviewer_id);
+  with check (reviewer_id = public.clerk_profile_id());
 
 -- 6. STORAGE BUCKET for listing images
 insert into storage.buckets (id, name, public) values ('listing-images', 'listing-images', true)

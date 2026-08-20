@@ -3,15 +3,16 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useSession } from "@clerk/nextjs";
 import toast from "react-hot-toast";
 import type { Category, Condition } from "@/types";
 import { CATEGORY_LABELS, CONDITION_LABELS } from "@/types";
 
 export default function EditListingPage() {
  const router = useRouter();
-const supabase = createClient();
 const { user, isLoaded } = useUser();
+const { session } = useSession();
+const supabase = createClient(session);
 const params = useParams();
 const listingId = params.id as string;
 
@@ -23,6 +24,7 @@ const listingId = params.id as string;
   const [paymentMethod, setPaymentMethod] = useState("UPI / Cash");
   const [isAnonymous, setIsAnonymous] = useState(true);
   const [images, setImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
 
@@ -49,6 +51,7 @@ const listingId = params.id as string;
         setCondition(data.condition || "");
         setPaymentMethod(data.payment_method);
         setIsAnonymous(data.is_anonymous);
+        setExistingImages(data.images ?? []);
         setImages([]);
       }
 
@@ -76,7 +79,7 @@ if (!user) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("id")
-      .eq("id", user.id)
+      .eq("clerk_id", user.id)
       .single();
 
     if (!profile) {
@@ -114,7 +117,7 @@ if (!user) {
       category,
       condition: condition || null,
       payment_method: paymentMethod,
-      images: imageUrls,
+      images: [...existingImages, ...imageUrls],
       is_anonymous: isAnonymous,
     }).eq("id", listingId);
 
@@ -134,6 +137,10 @@ if (!user) {
     }
   }
 
+  function removeExistingImage(url: string) {
+    setExistingImages((prev) => prev.filter((img) => img !== url));
+  }
+
   const showCondition = category === "physical_resale";
 
   return (
@@ -148,7 +155,36 @@ if (!user) {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="block text-sm font-medium text-stone-700">
-            Photo{images.length > 0 && ` (${images.length} selected)`}
+            Current Photos
+          </label>
+          {existingImages.length > 0 ? (
+            <div className="mt-2 flex gap-2 overflow-x-auto">
+              {existingImages.map((url) => (
+                <div key={url} className="relative h-16 w-16 shrink-0">
+                  <img
+                    src={url}
+                    alt=""
+                    className="h-16 w-16 rounded-lg object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeExistingImage(url)}
+                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-stone-800 text-xs text-white shadow transition hover:bg-red-600"
+                    aria-label="Remove photo"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1 text-xs text-stone-400">No current photos</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-stone-700">
+            Add New Photos{images.length > 0 && ` (${images.length} selected)`}
           </label>
           <label className="mt-1 flex cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-stone-300 px-4 py-6 text-sm text-stone-500 transition hover:border-brand-400 hover:text-brand-600">
             <svg
