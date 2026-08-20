@@ -176,6 +176,11 @@ console.log("Conversation ID:", convId);
         <div className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
+              {listing.is_sample && (
+                <span className="mb-1.5 inline-block rounded-md bg-stone-900/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">
+                  Sample
+                </span>
+              )}
               <h1 className="text-xl font-semibold text-stone-900">
                 {listing.title}
               </h1>
@@ -188,6 +193,13 @@ console.log("Conversation ID:", convId);
               {formatPrice(listing.price)}
             </span>
           </div>
+
+          {listing.is_sample && (
+            <p className="mt-3 rounded-lg bg-stone-50 px-3 py-2 text-xs text-stone-500">
+              This is a sample listing to show what GIM Bazaar looks like in
+              action.
+            </p>
+          )}
 
           <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-stone-700">
             {listing.description}

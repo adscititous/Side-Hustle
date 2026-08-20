@@ -28,6 +28,7 @@ export interface Listing {
   payment_method: string;
   images: string[];
   is_anonymous: boolean;
+  is_sample: boolean;
   status: ListingStatus;
   created_at: string;
   updated_at: string;

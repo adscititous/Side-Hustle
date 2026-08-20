@@ -17,7 +17,12 @@ export function ListingCard({ listing }: Props) {
       href={`/listings/${listing.id}`}
       className="group block overflow-hidden rounded-xl border border-stone-200 bg-white transition hover:shadow-md"
     >
-      <div className="aspect-[4/3] overflow-hidden bg-stone-100">
+      <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
+        {listing.is_sample && (
+          <span className="absolute left-2 top-2 z-10 rounded-md bg-stone-900/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">
+            Sample
+          </span>
+        )}
         {thumb ? (
           <img
             src={thumb}

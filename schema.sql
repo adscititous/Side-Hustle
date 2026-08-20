@@ -46,6 +46,7 @@ create table if not exists public.listings (
   payment_method text not null default 'UPI / Cash',
   images text[] not null default '{}',
   is_anonymous boolean not null default true,
+  is_sample boolean not null default false,
   status text not null default 'active' check (status in ('active','sold','deleted')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
