@@ -11,15 +11,18 @@ interface Props {
 
 export function ListingCard({ listing }: Props) {
   const thumb = listing.images?.[0];
+  const sellerName = listing.is_anonymous
+    ? listing.seller?.pseudonym_id ?? "Anonymous"
+    : listing.seller?.display_name ?? "Unknown";
 
   return (
     <Link
       href={`/listings/${listing.id}`}
-      className="group block overflow-hidden rounded-xl border border-stone-200 bg-white transition hover:shadow-md"
+      className="group block overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-stone-100 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg"
     >
       <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
         {listing.is_sample && (
-          <span className="absolute left-2 top-2 z-10 rounded-md bg-stone-900/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-white">
+          <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-stone-900/75 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
             Sample
           </span>
         )}
@@ -27,38 +30,40 @@ export function ListingCard({ listing }: Props) {
           <img
             src={thumb}
             alt={listing.title}
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-3xl text-stone-300">
+          <div className="flex h-full items-center justify-center text-4xl text-stone-300">
             {CATEGORY_ICONS[listing.category as Category]}
           </div>
         )}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        <span className="absolute bottom-2.5 left-3 text-base font-bold text-white drop-shadow-sm">
+          {formatPrice(listing.price)}
+        </span>
       </div>
       <div className="p-3.5">
-        <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-medium leading-snug text-stone-800 line-clamp-2">
-            {listing.title}
-          </h3>
-          <span className="shrink-0 text-sm font-semibold text-brand-700">
-            {formatPrice(listing.price)}
-          </span>
-        </div>
-        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
-          <span className="rounded-md bg-stone-100 px-2 py-0.5 font-medium">
+        <h3 className="text-sm font-semibold leading-snug text-stone-800 line-clamp-2">
+          {listing.title}
+        </h3>
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-xs">
+          <span className="rounded-full bg-brand-50 px-2.5 py-1 font-medium text-brand-700">
             {CATEGORY_LABELS[listing.category as Category]}
           </span>
           {listing.condition && (
-            <span className="rounded-md bg-stone-100 px-2 py-0.5">
+            <span className="rounded-full bg-stone-100 px-2.5 py-1 text-stone-600">
               {CONDITION_LABELS[listing.condition]}
             </span>
           )}
-          <span className="ml-auto">{timeAgo(listing.created_at)}</span>
         </div>
-        <div className="mt-2 text-xs text-stone-400">
-          {listing.is_anonymous
-            ? listing.seller?.pseudonym_id ?? "Anonymous"
-            : listing.seller?.display_name ?? "Unknown"}
+        <div className="mt-3 flex items-center justify-between border-t border-stone-100 pt-2.5 text-xs text-stone-400">
+          <div className="flex items-center gap-1.5">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-100 text-[10px] font-semibold text-brand-700">
+              {sellerName[0]?.toUpperCase()}
+            </span>
+            <span className="text-stone-500">{sellerName}</span>
+          </div>
+          <span>{timeAgo(listing.created_at)}</span>
         </div>
       </div>
     </Link>

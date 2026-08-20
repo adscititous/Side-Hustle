@@ -39,17 +39,19 @@ export function FeedClient({ initialListings }: Props) {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">Browse</h1>
-        <p className="mt-1 text-sm text-stone-500">
-          Find what you need from fellow GIM students
+      <div className="mb-7 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 px-6 py-8 text-white shadow-sm sm:px-8 sm:py-10">
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          Find what you need
+        </h1>
+        <p className="mt-1.5 text-sm text-brand-50 sm:text-base">
+          Bought, sold, and swapped by fellow GIM students
         </p>
       </div>
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <svg
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
+            className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -66,12 +68,12 @@ export function FeedClient({ initialListings }: Props) {
             placeholder="Search listings..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-lg border border-stone-300 py-2 pl-9 pr-3 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+            className="w-full rounded-full border border-stone-200 bg-white py-2.5 pl-10 pr-3 text-sm shadow-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
           />
         </div>
         <Link
           href="/listings/new"
-          className="flex items-center justify-center gap-1.5 rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-700 sm:w-auto"
+          className="flex items-center justify-center gap-1.5 rounded-full bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 hover:shadow-md sm:w-auto"
         >
           <svg
             className="h-4 w-4"
@@ -90,15 +92,15 @@ export function FeedClient({ initialListings }: Props) {
         </Link>
       </div>
 
-      <div className="mb-6 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+      <div className="mb-7 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
         {categories.map((c) => (
           <button
             key={c.value}
             onClick={() => setActiveCategory(c.value)}
-            className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+            className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
               activeCategory === c.value
-                ? "bg-brand-600 text-white"
-                : "bg-stone-100 text-stone-600 hover:bg-stone-200"
+                ? "bg-brand-600 text-white shadow-sm"
+                : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50"
             }`}
           >
             {c.value !== ALL && CATEGORY_ICONS[c.value as Category]}{" "}
@@ -108,14 +110,19 @@ export function FeedClient({ initialListings }: Props) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="mt-16 text-center">
-          <p className="text-lg font-medium text-stone-400">No listings yet</p>
+        <div className="mt-16 flex flex-col items-center text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-stone-100 text-2xl">
+            🔍
+          </div>
+          <p className="mt-4 text-lg font-medium text-stone-500">
+            No listings yet
+          </p>
           <p className="mt-1 text-sm text-stone-400">
             Be the first to post something!
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />
           ))}
