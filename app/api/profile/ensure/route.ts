@@ -4,19 +4,6 @@ import { auth } from "@clerk/nextjs/server";
 
 export async function POST(request: Request) {
   try {
-    console.log(
-      "DEBUG supabase env var names:",
-      Object.keys(process.env).filter((k) => k.includes("SUPABASE")),
-    );
-    console.log(
-      "DEBUG typeof SUPABASE_SERVICE_ROLE_KEY:",
-      typeof process.env.SUPABASE_SERVICE_ROLE_KEY,
-    );
-    console.log(
-      "DEBUG SUPABASE_SERVICE_ROLE_KEY length:",
-      process.env.SUPABASE_SERVICE_ROLE_KEY?.length,
-    );
-
     const { clerkUserId, email } = await request.json();
 
     if (!clerkUserId || !email) {
