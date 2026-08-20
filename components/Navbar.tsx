@@ -24,16 +24,20 @@ export function Navbar() {
 
   return (
     <nav className="fixed inset-x-0 top-0 z-50 border-b border-stone-200/70 bg-white/85 shadow-sm backdrop-blur-lg">
-      <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-lg font-bold tracking-tight text-stone-900"
-        >
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-600 text-sm text-white">
-            🛍️
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="flex items-center gap-3">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-sm ring-2 ring-brand-100">
+            <span className="font-display text-[11px] font-bold tracking-widest">
+              GIM
+            </span>
           </span>
-          <span>
-            GIM <span className="text-brand-600">Bazaar</span>
+          <span className="flex flex-col leading-none">
+            <span className="font-display text-xl font-bold tracking-tight text-stone-900">
+              GIM <span className="text-brand-600">Bazaar</span>
+            </span>
+            <span className="mt-1 hidden text-[11px] font-medium tracking-wide text-stone-500 sm:block">
+              A marketplace for GIM students, by the students
+            </span>
           </span>
         </Link>
 

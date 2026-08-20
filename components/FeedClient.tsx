@@ -39,16 +39,16 @@ export function FeedClient({ initialListings }: Props) {
 
   return (
     <div>
-      <div className="mb-7 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-700 px-6 py-8 text-white shadow-sm sm:px-8 sm:py-10">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+      <div className="mb-6 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 px-6 py-7 text-white shadow-sm sm:px-8 sm:py-8">
+        <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
           Find what you need
         </h1>
-        <p className="mt-1.5 text-sm text-brand-50 sm:text-base">
+        <p className="mt-1.5 text-sm text-brand-100 sm:text-base">
           Bought, sold, and swapped by fellow GIM students
         </p>
       </div>
 
-      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <svg
             className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400"
@@ -92,7 +92,7 @@ export function FeedClient({ initialListings }: Props) {
         </Link>
       </div>
 
-      <div className="mb-7 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+      <div className="mb-6 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
         {categories.map((c) => (
           <button
             key={c.value}
@@ -122,7 +122,7 @@ export function FeedClient({ initialListings }: Props) {
           </p>
         </div>
       ) : (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />
           ))}
