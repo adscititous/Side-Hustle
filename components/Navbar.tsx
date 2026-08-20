@@ -36,30 +36,39 @@ export function Navbar() {
               GIM <span className="text-brand-600">Bazaar</span>
             </span>
             <span className="mt-1 hidden text-[11px] font-medium tracking-wide text-stone-500 sm:block">
-              A marketplace for GIM students, by the students
+              Student Marketplace
             </span>
           </span>
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
           {!isLoaded ? null : user ? (
             <>
               <Link
-                href="/listings/new"
-                className="hidden items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 hover:shadow-md sm:inline-flex"
-              >
-                + Sell
-              </Link>
-              <Link
                 href="/messages"
-                className={`text-sm font-medium transition ${
+                aria-label="Messages"
+                title="Messages"
+                className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
                   pathname === "/messages"
-                    ? "text-brand-600"
-                    : "text-stone-500 hover:text-stone-800"
+                    ? "bg-brand-100 text-brand-700"
+                    : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
                 }`}
               >
-                Messages
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
               </Link>
+
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
@@ -89,7 +98,7 @@ export function Navbar() {
                         onClick={() => setMenuOpen(false)}
                         className="block px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 sm:hidden"
                       >
-                        Sell an Item
+                        Post a Listing
                       </Link>
                       <button
                         onClick={handleSignOut}
@@ -101,6 +110,13 @@ export function Navbar() {
                   </>
                 )}
               </div>
+
+              <Link
+                href="/listings/new"
+                className="hidden items-center gap-1.5 rounded-full bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 hover:shadow-md sm:inline-flex"
+              >
+                + Post a Listing
+              </Link>
             </>
           ) : (
             <Link
