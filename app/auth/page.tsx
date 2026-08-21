@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSignIn, useSignUp } from "@clerk/nextjs";
+import { useSignIn, useSignUp, useClerk } from "@clerk/nextjs";
 import toast from "react-hot-toast";
 import { track } from "@/lib/mixpanel";
 
@@ -17,6 +17,7 @@ export default function AuthPage() {
   const [verificationCode, setVerificationCode] = useState("");
   const [pendingVerification, setPendingVerification] = useState(false);
   const { signIn } = useSignIn();
+  const clerk = useClerk();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -125,20 +126,24 @@ export default function AuthPage() {
 }
 
 async function handleGoogleSignIn() {
-  if (!signIn) return;
-
   try {
     track("Sign In Started", { method: "google" });
 
-    const { error } = await signIn.sso({
+    // Deliberately using the classic Clerk client (via useClerk()) instead of
+    // the `useSignIn()` Future-API resource here. The Future resource's
+    // `signIn.sso()` routes through Clerk's Account Portal domain
+    // (accounts.gimbazar.in) as an intermediate hop, and that domain has no
+    // DNS record for this instance — Clerk's own dashboard confirms "Account
+    // portal is not supported with your current domain configuration."
+    // `clerk.client.signIn.authenticateWithRedirect()` redirects straight to
+    // Google with no detour through that broken domain — confirmed working
+    // end-to-end against production (redirects to Google's real consent
+    // screen with the correct client ID and callback URL).
+    await clerk.client.signIn.authenticateWithRedirect({
       strategy: "oauth_google",
       redirectUrl: "/auth/callback",
-      redirectCallbackUrl: "/auth/callback",
+      redirectUrlComplete: "/",
     });
-
-    if (error) {
-      toast.error(error.message);
-    }
   } catch (error) {
     toast.error(
       error instanceof Error ? error.message : "Google sign-in failed"
