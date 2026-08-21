@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSignIn, useSignUp } from "@clerk/nextjs";
 import toast from "react-hot-toast";
@@ -22,6 +22,8 @@ export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetCodeSent, setResetCodeSent] = useState(false);
@@ -128,6 +130,39 @@ export default function AuthPage() {
   } catch (error) {
     toast.error(
       error instanceof Error ? error.message : "Something went wrong"
+    );
+  } finally {
+    setLoading(false);
+  }
+}
+
+useEffect(() => {
+  if (resendCooldown <= 0) return;
+
+  const timer = setInterval(() => {
+    setResendCooldown((c) => (c <= 1 ? 0 : c - 1));
+  }, 1000);
+
+  return () => clearInterval(timer);
+}, [resendCooldown]);
+
+async function handleResendCode() {
+  if (resendCooldown > 0 || !signUp) return;
+  setLoading(true);
+
+  try {
+    const { error } = await signUp.verifications.sendEmailCode();
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success("New code sent! Check your email (and spam/junk folder).");
+    setResendCooldown(30);
+  } catch (error) {
+    toast.error(
+      error instanceof Error ? error.message : "Could not resend code"
     );
   } finally {
     setLoading(false);
@@ -497,6 +532,18 @@ if (signUp.status === "complete") {
     >
       {loading ? "Verifying..." : "Verify Email"}
     </button>
+
+    <p className="text-center text-sm text-stone-500">
+      Didn&apos;t get a code?{" "}
+      <button
+        type="button"
+        onClick={handleResendCode}
+        disabled={resendCooldown > 0 || loading}
+        className="font-medium text-brand-600 hover:text-brand-700 disabled:cursor-not-allowed disabled:text-stone-400"
+      >
+        {resendCooldown > 0 ? `Resend code (${resendCooldown}s)` : "Resend code"}
+      </button>
+    </p>
   </form>
 )}
 
