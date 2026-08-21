@@ -130,25 +130,15 @@ async function handleGoogleSignIn() {
   try {
     track("Sign In Started", { method: "google" });
 
-    // `authenticateWithRedirect` is the classic Clerk API method. It isn't part
-    // of the newer "Future" TypeScript surface (`SignInFutureResource`) that the
-    // rest of this file uses, but it's present at runtime on the same signIn
-    // resource (Clerk's Future hooks proxy through to the underlying classic
-    // methods for anything they don't explicitly re-implement) — confirmed
-    // working against production. Cast narrowly just for this call.
-    const signInWithRedirect = signIn as unknown as {
-      authenticateWithRedirect: (params: {
-        strategy: string;
-        redirectUrl: string;
-        redirectUrlComplete: string;
-      }) => Promise<void>;
-    };
-
-    await signInWithRedirect.authenticateWithRedirect({
+    const { error } = await signIn.sso({
       strategy: "oauth_google",
       redirectUrl: "/auth/callback",
-      redirectUrlComplete: "/",
+      redirectCallbackUrl: "/auth/callback",
     });
+
+    if (error) {
+      toast.error(error.message);
+    }
   } catch (error) {
     toast.error(
       error instanceof Error ? error.message : "Google sign-in failed"
