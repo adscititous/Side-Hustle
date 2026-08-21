@@ -8,8 +8,6 @@ import { track } from "@/lib/mixpanel";
 
 export const dynamic = "force-dynamic";
 
-const GIM_EMAIL_DOMAIN = "@gim.ac.in";
-
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,16 +48,6 @@ export default function AuthPage() {
 
   async function handleSubmit(e: React.FormEvent) {
   e.preventDefault();
-
-  if (
-    mode === "signup" &&
-    !email.trim().toLowerCase().endsWith(GIM_EMAIL_DOMAIN)
-  ) {
-    toast.error(
-      `GIM Bazaar is only for GIM students right now — please sign up with your ${GIM_EMAIL_DOMAIN} email address.`
-    );
-    return;
-  }
 
   setLoading(true);
 
@@ -133,6 +121,28 @@ export default function AuthPage() {
     );
   } finally {
     setLoading(false);
+  }
+}
+
+async function handleGoogleSignIn() {
+  if (!signIn) return;
+
+  try {
+    track("Sign In Started", { method: "google" });
+
+    const { error } = await signIn.sso({
+      strategy: "oauth_google",
+      redirectUrl: "/auth/callback",
+      redirectCallbackUrl: "/auth/callback",
+    });
+
+    if (error) {
+      toast.error(error.message);
+    }
+  } catch (error) {
+    toast.error(
+      error instanceof Error ? error.message : "Google sign-in failed"
+    );
   }
 }
 
@@ -327,7 +337,7 @@ if (signUp.status === "complete") {
           <p className="mb-8 text-sm text-stone-500">
             {resetCodeSent
               ? "Enter the code we emailed you and choose a new password."
-              : "Enter your GIM email and we'll send you a reset code."}
+              : "Enter your email and we'll send you a reset code."}
           </p>
 
           {!resetCodeSent ? (
@@ -420,10 +430,44 @@ if (signUp.status === "complete") {
         <p className="mb-8 text-sm text-stone-500">
           {mode === "login"
             ? "Sign in to browse and sell"
-            : `Create an account with your ${GIM_EMAIL_DOMAIN} email to start buying and selling`}
+            : "Create an account to start buying and selling"}
         </p>
 
-        {!pendingVerification ? (<form onSubmit={handleSubmit} className="space-y-4">
+        {!pendingVerification ? (
+        <>
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-medium text-stone-700 transition hover:bg-stone-50"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24">
+            <path
+              fill="#4285F4"
+              d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.77-2.4 3.62v3h3.88c2.27-2.09 3.57-5.17 3.57-8.81z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 24c3.24 0 5.96-1.07 7.95-2.92l-3.88-3c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.26v3.11C3.24 21.3 7.28 24 12 24z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.27 14.27c-.24-.72-.38-1.49-.38-2.27s.14-1.55.38-2.27V6.62H1.26A11.96 11.96 0 000 12c0 1.94.46 3.77 1.26 5.38l4.01-3.11z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.28 0 3.24 2.7 1.26 6.62l4.01 3.11C6.22 6.86 8.87 4.75 12 4.75z"
+            />
+          </svg>
+          Continue with Google
+        </button>
+
+        <div className="my-4 flex items-center gap-3">
+          <div className="h-px flex-1 bg-stone-200" />
+          <span className="text-xs font-medium text-stone-400">or</span>
+          <div className="h-px flex-1 bg-stone-200" />
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
 
   {mode === "signup" && (
     <div>
@@ -453,7 +497,6 @@ if (signUp.status === "complete") {
       required
       value={email}
       onChange={(e) => setEmail(e.target.value)}
-      placeholder={mode === "signup" ? `you${GIM_EMAIL_DOMAIN}` : undefined}
       className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
     />
   </div>
@@ -505,6 +548,7 @@ if (signUp.status === "complete") {
                 : "Create Account"}
           </button>
         </form>
+        </>
 
 ) : (
   <form onSubmit={handleVerifyCode} className="space-y-4">
