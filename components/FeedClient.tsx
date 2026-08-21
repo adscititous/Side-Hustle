@@ -12,8 +12,7 @@ interface Props {
 }
 
 const ALL = "all";
-const HERO_IMAGE =
-  "https://images.unsplash.com/photo-1741637335289-c99652d3155f?w=1600&q=80&auto=format&fit=crop";
+const HERO_IMAGE = "/hero-campus.jpg";
 
 export function FeedClient({ initialListings }: Props) {
   const [search, setSearch] = useState("");
