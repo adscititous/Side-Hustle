@@ -9,6 +9,7 @@ import { CATEGORY_LABELS, CONDITION_LABELS } from "@/types";
 import { formatPrice, timeAgo } from "@/lib/utils";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { track } from "@/lib/mixpanel";
 
 interface Props {
   profile: Profile;
@@ -36,6 +37,7 @@ export function ProfileClient({ profile, listings }: Props) {
     if (error) {
       toast.error(error.message);
     } else {
+      track("Profile Updated", { is_anonymous: isAnonymous });
       toast.success("Profile updated");
       router.refresh();
     }

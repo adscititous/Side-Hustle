@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useUser, useClerk, useSession } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase";
+import { track } from "@/lib/mixpanel";
 
 export function Navbar() {
   const { user, isLoaded } = useUser();
@@ -16,6 +17,7 @@ export function Navbar() {
   const supabase = createClient(session);
 
   async function handleSignOut() {
+    track("Signed Out");
     await signOut();
     setMenuOpen(false);
     router.refresh();

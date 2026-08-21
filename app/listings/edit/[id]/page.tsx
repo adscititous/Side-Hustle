@@ -7,6 +7,7 @@ import { useUser, useSession } from "@clerk/nextjs";
 import toast from "react-hot-toast";
 import type { Category, Condition } from "@/types";
 import { CATEGORY_LABELS, CONDITION_LABELS } from "@/types";
+import { track } from "@/lib/mixpanel";
 
 export default function EditListingPage() {
  const router = useRouter();
@@ -126,6 +127,14 @@ if (!user) {
       setLoading(false);
       return;
     }
+
+    track("Listing Updated", {
+      listing_id: listingId,
+      category,
+      price: parseFloat(price),
+      condition: condition || undefined,
+      is_anonymous: isAnonymous,
+    });
 
     toast.success("Listed!");
     router.push("/");

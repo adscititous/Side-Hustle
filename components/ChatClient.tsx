@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase";
 import { formatPrice, timeAgo } from "@/lib/utils";
 import Link from "next/link";
 import type { Message } from "@/types";
+import { track } from "@/lib/mixpanel";
 
 interface ConversationData {
   id: string;
@@ -107,6 +108,11 @@ export function ChatClient({ conversation, userId }: Props) {
         .from("conversations")
         .update({ last_message_at: new Date().toISOString() })
         .eq("id", conversation.id);
+
+      track("Message Sent", {
+        conversation_id: conversation.id,
+        listing_id: conversation.listing.id,
+      });
 
       setInput("");
     }

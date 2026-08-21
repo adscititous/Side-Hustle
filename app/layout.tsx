@@ -5,6 +5,7 @@ import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/Navbar";
 import { ProfileEnsurer } from "@/components/ProfileEnsurer";
+import { MixpanelProvider } from "@/components/MixpanelProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 const fraunces = Fraunces({
@@ -28,6 +29,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.className} ${fraunces.variable}`}>
         <ClerkProvider>
+          <MixpanelProvider />
           <ProfileEnsurer />
           <Navbar />
           <main className="mx-auto max-w-7xl px-4 pb-16 pt-24 sm:px-6 lg:px-8">

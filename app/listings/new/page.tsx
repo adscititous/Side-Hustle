@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import type { Category, Condition } from "@/types";
 import { CATEGORY_LABELS, CONDITION_LABELS } from "@/types";
 import { useUser, useSession } from "@clerk/nextjs";
+import { track } from "@/lib/mixpanel";
 
 export default function NewListingPage() {
   const router = useRouter();
@@ -89,6 +90,14 @@ export default function NewListingPage() {
       setLoading(false);
       return;
     }
+
+    track("Listing Created", {
+      category,
+      price: parseFloat(price),
+      condition: condition || undefined,
+      is_anonymous: isAnonymous,
+      image_count: imageUrls.length,
+    });
 
     toast.success("Listed!");
     router.push("/");

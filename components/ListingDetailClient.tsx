@@ -13,6 +13,7 @@ import {
   CATEGORY_ICONS,
 } from "@/types";
 import toast from "react-hot-toast";
+import { track } from "@/lib/mixpanel";
 
 interface Props {
   listing: Listing;
@@ -46,6 +47,16 @@ export function ListingDetailClient({ listing, reviews }: Props) {
 
     loadProfileId();
   }, [user]);
+
+  useEffect(() => {
+    track("Listing Viewed", {
+      listing_id: listing.id,
+      category: listing.category,
+      price: listing.price,
+      is_sample: listing.is_sample,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listing.id]);
 
   const isOwner = profileId === listing.seller_id;
   const sellerName = listing.is_anonymous
@@ -98,6 +109,10 @@ console.log("User ID:", user.id);
         return;
       }
       convId = conv!.id;
+      track("Conversation Started", {
+        listing_id: listing.id,
+        category: listing.category,
+      });
     }
 console.log("Conversation ID:", convId);
     router.push(`/messages/${convId}`);
@@ -275,6 +290,10 @@ console.log("Conversation ID:", convId);
                       .from("listings")
                       .update({ status: "sold" })
                       .eq("id", listing.id);
+                    track("Listing Marked as Sold", {
+                      listing_id: listing.id,
+                      category: listing.category,
+                    });
                     toast.success("Marked as sold");
                     router.refresh();
                   }}

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import type { Listing, Category } from "@/types";
 import { CATEGORY_LABELS, CATEGORY_ICONS } from "@/types";
 import { ListingCard } from "@/components/ListingCard";
+import { track } from "@/lib/mixpanel";
 
 interface Props {
   initialListings: Listing[];
@@ -38,6 +39,23 @@ export function FeedClient({ initialListings }: Props) {
       return matchCategory && matchSearch;
     });
   }, [initialListings, activeCategory, search]);
+
+  useEffect(() => {
+    if (!search.trim()) return;
+    const timeout = setTimeout(() => {
+      track("Search Performed", {
+        query: search,
+        result_count: filtered.length,
+      });
+    }, 600);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  function handleCategoryChange(value: string) {
+    setActiveCategory(value);
+    track("Category Filtered", { category: value });
+  }
 
   return (
     <div>
@@ -125,7 +143,7 @@ export function FeedClient({ initialListings }: Props) {
           {categories.map((c) => (
             <button
               key={c.value}
-              onClick={() => setActiveCategory(c.value)}
+              onClick={() => handleCategoryChange(c.value)}
               className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
                 activeCategory === c.value
                   ? "bg-brand-600 text-white shadow-sm"
