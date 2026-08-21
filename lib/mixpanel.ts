@@ -1,65 +1,73 @@
 "use client";
 
 /**
- * Thin wrapper around the Mixpanel JS SDK (loaded from the CDN by
- * <MixpanelProvider>, see components/MixpanelProvider.tsx). Every function
- * here is a safe no-op if Mixpanel hasn't loaded yet or no project token is
- * configured, so it's always safe to call these from anywhere in the app —
- * event volume is opt-in via NEXT_PUBLIC_MIXPANEL_TOKEN.
+ * Analytics tracking, routed through our own /api/events endpoint instead
+ * of loading Mixpanel's script in the browser (see components/
+ * MixpanelProvider.tsx for where it used to be loaded). Ad-blockers and
+ * DNS-level tracker blockers — very common on students' phones — block
+ * cdn.mxpnl.com / api.mixpanel.com by name, which silently dropped every
+ * single event under that setup (confirmed: zero events ever received).
+ * Sending events to our own domain instead means nothing on the visitor's
+ * device ever contacts a recognizable third-party tracker.
+ *
+ * Every function here is a safe no-op on failure, so it's always safe to
+ * call these from anywhere in the app.
  */
 
-declare global {
-  interface Window {
-    mixpanel?: {
-      init: (token: string, config?: Record<string, unknown>) => void;
-      track: (event: string, properties?: Record<string, unknown>) => void;
-      identify: (id: string) => void;
-      reset: () => void;
-      people: {
-        set: (properties: Record<string, unknown>) => void;
-      };
-    };
+const DISTINCT_ID_KEY = "gb_distinct_id";
+
+function getDistinctId(): string {
+  if (typeof window === "undefined") return "server";
+  try {
+    let id = localStorage.getItem(DISTINCT_ID_KEY);
+    if (!id) {
+      id = "anon_" + crypto.randomUUID();
+      localStorage.setItem(DISTINCT_ID_KEY, id);
+    }
+    return id;
+  } catch {
+    return "anon_unknown";
   }
 }
 
-const MIXPANEL_TOKEN = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
-
-export function isMixpanelReady(): boolean {
-  return Boolean(MIXPANEL_TOKEN) && typeof window !== "undefined" && !!window.mixpanel;
+function send(body: Record<string, unknown>) {
+  if (typeof window === "undefined") return;
+  try {
+    fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+      keepalive: true,
+    }).catch(() => {
+      // never let analytics failures affect the app
+    });
+  } catch {
+    // ignore
+  }
 }
 
 export function track(event: string, properties?: Record<string, unknown>) {
-  if (!isMixpanelReady()) return;
-  try {
-    window.mixpanel!.track(event, properties);
-  } catch (err) {
-    console.error("Mixpanel track error:", err);
-  }
+  send({ event, properties, distinctId: getDistinctId() });
 }
 
 export function identifyUser(userId: string) {
-  if (!isMixpanelReady()) return;
+  if (typeof window === "undefined") return;
   try {
-    window.mixpanel!.identify(userId);
-  } catch (err) {
-    console.error("Mixpanel identify error:", err);
+    localStorage.setItem(DISTINCT_ID_KEY, userId);
+  } catch {
+    // ignore
   }
 }
 
 export function setUserProperties(properties: Record<string, unknown>) {
-  if (!isMixpanelReady()) return;
-  try {
-    window.mixpanel!.people.set(properties);
-  } catch (err) {
-    console.error("Mixpanel people.set error:", err);
-  }
+  send({ kind: "profile", distinctId: getDistinctId(), setProps: properties });
 }
 
 export function resetMixpanelUser() {
-  if (!isMixpanelReady()) return;
+  if (typeof window === "undefined") return;
   try {
-    window.mixpanel!.reset();
-  } catch (err) {
-    console.error("Mixpanel reset error:", err);
+    localStorage.removeItem(DISTINCT_ID_KEY);
+  } catch {
+    // ignore
   }
 }

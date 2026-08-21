@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Script from "next/script";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import {
@@ -11,30 +10,24 @@ import {
   track,
 } from "@/lib/mixpanel";
 
-const MIXPANEL_TOKEN = process.env.NEXT_PUBLIC_MIXPANEL_TOKEN;
-
 /**
- * Mounted once at the app root (see app/layout.tsx). Loads the Mixpanel
- * library from the CDN, tracks page views on every route change, and keeps
- * the Mixpanel identity in sync with the signed-in Clerk user.
- *
- * If NEXT_PUBLIC_MIXPANEL_TOKEN isn't set, this renders nothing and every
- * tracking call elsewhere in the app stays a silent no-op — so it's safe to
- * deploy before a token is configured.
+ * Mounted once at the app root (see app/layout.tsx). Tracks page views on
+ * every route change and keeps the analytics identity in sync with the
+ * signed-in Clerk user. Tracking is routed server-side through
+ * /api/events — see lib/mixpanel.ts for why (ad-blockers widely block
+ * Mixpanel's own domains, so we don't talk to them from the browser).
  */
 export function MixpanelProvider() {
-  const [ready, setReady] = useState(false);
   const pathname = usePathname();
   const { user, isLoaded } = useUser();
   const identifiedUserId = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!ready) return;
     track("Page Viewed", { path: pathname });
-  }, [ready, pathname]);
+  }, [pathname]);
 
   useEffect(() => {
-    if (!ready || !isLoaded) return;
+    if (!isLoaded) return;
 
     if (user) {
       if (identifiedUserId.current !== user.id) {
@@ -51,26 +44,7 @@ export function MixpanelProvider() {
       identifiedUserId.current = null;
       resetMixpanelUser();
     }
-  }, [ready, isLoaded, user]);
+  }, [isLoaded, user]);
 
-  if (!MIXPANEL_TOKEN) return null;
-
-  return (
-    <Script
-      src="https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js"
-      strategy="afterInteractive"
-      onLoad={() => {
-        if (window.mixpanel) {
-          window.mixpanel.init(MIXPANEL_TOKEN, {
-            persistence: "localStorage",
-            track_pageview: false,
-          });
-          setReady(true);
-        }
-      }}
-      onError={() => {
-        console.error("Mixpanel script failed to load");
-      }}
-    />
-  );
+  return null;
 }
