@@ -16,21 +16,7 @@ export async function POST(request: Request) {
     const { userId } = await auth();
 
     if (!userId || userId !== clerkUserId) {
-      // TEMPORARY DIAGNOSTIC — remove once the profile/ensure 403 issue is confirmed fixed.
-      // Key prefixes are logged server-side only, never returned to the client.
-      const diagnostic = {
-        serverSawUserId: userId ?? null,
-        clientSentClerkUserId: clerkUserId,
-        match: userId === clerkUserId,
-      };
-      console.error("PROFILE ENSURE 403 DIAGNOSTIC:", {
-        ...diagnostic,
-        hasSecretKey: Boolean(process.env.CLERK_SECRET_KEY),
-        secretKeyPrefix: process.env.CLERK_SECRET_KEY?.slice(0, 8) ?? null,
-        hasPublishableKey: Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY),
-        publishableKeyPrefix: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.slice(0, 8) ?? null,
-      });
-      return NextResponse.json({ error: "Forbidden", diagnostic }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
