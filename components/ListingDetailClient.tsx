@@ -74,8 +74,6 @@ export function ListingDetailClient({ listing, reviews }: Props) {
       .select("id")
       .eq("clerk_id", user.id)
       .single();
-      console.log("Profile:", profile);
-console.log("User ID:", user.id);
     if (!profile) return;
 
     if (profile.id === listing.seller_id) {
@@ -114,7 +112,6 @@ console.log("User ID:", user.id);
         category: listing.category,
       });
     }
-console.log("Conversation ID:", convId);
     router.push(`/messages/${convId}`);
   }
 
