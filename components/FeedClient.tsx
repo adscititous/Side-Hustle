@@ -18,6 +18,8 @@ const HERO_IMAGE = "/hero-campus.jpg";
 export function FeedClient({ initialListings }: Props) {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>(ALL);
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
   const { favoritedIds, toggleFavorite } = useFavorites();
 
   const categories: { value: string; label: string }[] = [
@@ -28,6 +30,9 @@ export function FeedClient({ initialListings }: Props) {
     })),
   ];
 
+  const min = minPrice ? parseFloat(minPrice) : null;
+  const max = maxPrice ? parseFloat(maxPrice) : null;
+
   const filtered = useMemo(() => {
     return initialListings.filter((l) => {
       const matchCategory =
@@ -37,9 +42,12 @@ export function FeedClient({ initialListings }: Props) {
         !q ||
         l.title.toLowerCase().includes(q) ||
         l.description.toLowerCase().includes(q);
-      return matchCategory && matchSearch;
+      const matchMin = min === null || Number.isNaN(min) || l.price >= min;
+      const matchMax = max === null || Number.isNaN(max) || l.price <= max;
+      return matchCategory && matchSearch && matchMin && matchMax;
     });
-  }, [initialListings, activeCategory, search]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialListings, activeCategory, search, min, max]);
 
   useEffect(() => {
     if (!search.trim()) return;
@@ -53,9 +61,27 @@ export function FeedClient({ initialListings }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
+  useEffect(() => {
+    if (!minPrice && !maxPrice) return;
+    const timeout = setTimeout(() => {
+      track("Price Filtered", {
+        min_price: min ?? undefined,
+        max_price: max ?? undefined,
+        result_count: filtered.length,
+      });
+    }, 600);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minPrice, maxPrice]);
+
   function handleCategoryChange(value: string) {
     setActiveCategory(value);
     track("Category Filtered", { category: value });
+  }
+
+  function clearPriceFilter() {
+    setMinPrice("");
+    setMaxPrice("");
   }
 
   return (
@@ -158,16 +184,54 @@ export function FeedClient({ initialListings }: Props) {
           ))}
         </div>
 
+        <div className="mb-6 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-stone-500">
+            Price (₹)
+          </span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            placeholder="Min"
+            value={minPrice}
+            onChange={(e) => setMinPrice(e.target.value)}
+            className="w-24 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+          />
+          <span className="text-stone-300">–</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            placeholder="Max"
+            value={maxPrice}
+            onChange={(e) => setMaxPrice(e.target.value)}
+            className="w-24 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+          />
+          {(minPrice || maxPrice) && (
+            <button
+              type="button"
+              onClick={clearPriceFilter}
+              className="text-xs font-medium text-brand-600 hover:text-brand-700"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+
         {filtered.length === 0 ? (
           <div className="mt-16 flex flex-col items-center text-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-stone-100 text-2xl">
               🔍
             </div>
             <p className="mt-4 text-lg font-medium text-stone-500">
-              No listings yet
+              {initialListings.length === 0
+                ? "No listings yet"
+                : "No listings match your filters"}
             </p>
             <p className="mt-1 text-sm text-stone-400">
-              Be the first to post something!
+              {initialListings.length === 0
+                ? "Be the first to post something!"
+                : "Try widening your price range or search."}
             </p>
           </div>
         ) : (
