@@ -8,15 +8,47 @@ export const dynamic = "force-dynamic";
 
 export default async function MessagesPage() {
   const supabase = await createServerSupabase();
-  const { userId } = await auth();
-if (!userId) redirect("/sign-in");
+  const { userId: clerkId } = await auth();
+  if (!clerkId) redirect("/sign-in");
 
-  const { data: conversations } = await supabase
-    .from("conversations")
-    .select("*, listing:listings(id, title, images), buyer:profiles!buyer_id(*), seller:profiles!seller_id(*)")
-    .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
-    .order("last_message_at", { ascending: false });
+  // conversations.buyer_id / seller_id store the internal Supabase profile
+  // UUID, not the Clerk user ID — resolve it first before querying.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("clerk_id", clerkId)
+    .single();
 
+  const userId = profile?.id ?? null;
+
+  const { data: conversations } = userId
+    ? await supabase
+        .from("conversations")
+        .select(
+          "*, listing:listings(id, title, images), buyer:profiles!buyer_id(*), seller:profiles!seller_id(*)",
+        )
+        .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+        .order("last_message_at", { ascending: false })
+    : { data: null };
+
+  const conversationIds = (conversations ?? []).map((c) => c.id);
+  const unreadByConversation = new Map<string, number>();
+
+  if (userId && conversationIds.length > 0) {
+    const { data: unreadRows } = await supabase
+      .from("messages")
+      .select("conversation_id")
+      .in("conversation_id", conversationIds)
+      .eq("read", false)
+      .neq("sender_id", userId);
+
+    for (const row of unreadRows ?? []) {
+      unreadByConversation.set(
+        row.conversation_id,
+        (unreadByConversation.get(row.conversation_id) ?? 0) + 1,
+      );
+    }
+  }
 
   return (
     <div>
@@ -40,6 +72,7 @@ if (!userId) redirect("/sign-in");
               : other?.display_name ?? "Unknown";
 
             const thumb = conv.listing?.images?.[0];
+            const unread = unreadByConversation.get(conv.id) ?? 0;
 
             return (
               <Link
@@ -61,18 +94,31 @@ if (!userId) redirect("/sign-in");
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-stone-800">
+                  <p
+                    className={`truncate text-sm ${
+                      unread > 0
+                        ? "font-semibold text-stone-900"
+                        : "font-medium text-stone-800"
+                    }`}
+                  >
                     {conv.listing?.title ?? "Unknown listing"}
                   </p>
                   <p className="truncate text-xs text-stone-500">
                     with {otherName}
                   </p>
                 </div>
-                <span className="shrink-0 text-xs text-stone-400">
-                  {formatDistanceToNow(new Date(conv.last_message_at ?? conv.created_at), {
-                    addSuffix: true,
-                  })}
-                </span>
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <span className="text-xs text-stone-400">
+                    {formatDistanceToNow(new Date(conv.last_message_at ?? conv.created_at), {
+                      addSuffix: true,
+                    })}
+                  </span>
+                  {unread > 0 && (
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand-600 px-1.5 text-[10px] font-semibold text-white">
+                      {unread > 9 ? "9+" : unread}
+                    </span>
+                  )}
+                </div>
               </Link>
             );
           })}

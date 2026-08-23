@@ -10,8 +10,18 @@ interface Props {
 export default async function ConversationPage({ params }: Props) {
   const { id } = await params;
   const supabase = await createServerSupabase();
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
+  const { userId: clerkId } = await auth();
+  if (!clerkId) redirect("/sign-in");
+
+  // conversations.buyer_id / seller_id store the internal Supabase profile
+  // UUID, not the Clerk user ID — resolve it first so the participant check
+  // below actually matches.
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id")
+    .eq("clerk_id", clerkId)
+    .single();
+  if (!profile) redirect("/sign-in");
 
   const { data: conversation } = await supabase
     .from("conversations")
@@ -19,19 +29,11 @@ export default async function ConversationPage({ params }: Props) {
     .eq("id", id)
     .single();
 
-console.log("Route ID:", id);
-console.log("Conversation:", conversation);
-
   if (!conversation) notFound();
 
-  console.log("Logged in user:", userId);
-console.log("Buyer:", conversation.buyer_id);
-console.log("Seller:", conversation.seller_id);
-
   const isParticipant =
-    conversation.buyer_id === userId ||
-    conversation.seller_id === userId;
+    conversation.buyer_id === profile.id || conversation.seller_id === profile.id;
   if (!isParticipant) notFound();
 
-  return <ChatClient conversation={conversation} userId={userId} />;
+  return <ChatClient conversation={conversation} userId={profile.id} />;
 }

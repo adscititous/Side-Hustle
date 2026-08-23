@@ -12,9 +12,66 @@ export function Navbar() {
   const { signOut } = useClerk();
   const { session } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [profileId, setProfileId] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient(session);
+
+  useEffect(() => {
+    if (!user) {
+      setProfileId(null);
+      return;
+    }
+    let cancelled = false;
+
+    supabase
+      .from("profiles")
+      .select("id")
+      .eq("clerk_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (!cancelled) setProfileId(data?.id ?? null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  useEffect(() => {
+    if (!profileId) {
+      setUnreadCount(0);
+      return;
+    }
+
+    const fetchUnreadCount = async () => {
+      const { count } = await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("read", false)
+        .neq("sender_id", profileId);
+      setUnreadCount(count ?? 0);
+    };
+    fetchUnreadCount();
+
+    // RLS already limits this to messages in conversations profileId is
+    // part of, so no per-conversation filter is needed here.
+    const channel = supabase
+      .channel(`unread-messages:${profileId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        fetchUnreadCount,
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileId]);
 
   async function handleSignOut() {
     track("Signed Out");
@@ -50,7 +107,7 @@ export function Navbar() {
                 href="/messages"
                 aria-label="Messages"
                 title="Messages"
-                className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                className={`relative flex h-9 w-9 items-center justify-center rounded-full transition ${
                   pathname === "/messages"
                     ? "bg-brand-100 text-brand-700"
                     : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
@@ -69,6 +126,11 @@ export function Navbar() {
                     d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                   />
                 </svg>
+                {unreadCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white ring-2 ring-white">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
               </Link>
 
               <div className="relative">

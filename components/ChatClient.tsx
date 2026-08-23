@@ -53,6 +53,17 @@ export function ChatClient({ conversation, userId }: Props) {
     : other.display_name;
 
   useEffect(() => {
+    const markIncomingAsRead = async () => {
+      // Marks any messages the other person sent as read now that this
+      // conversation is open — this is what makes the unread badge clear.
+      await supabase
+        .from("messages")
+        .update({ read: true })
+        .eq("conversation_id", conversation.id)
+        .eq("read", false)
+        .neq("sender_id", userId);
+    };
+
     const load = async () => {
       const { data } = await supabase
         .from("messages")
@@ -60,6 +71,7 @@ export function ChatClient({ conversation, userId }: Props) {
         .eq("conversation_id", conversation.id)
         .order("created_at", { ascending: true });
       if (data) setMessages(data);
+      markIncomingAsRead();
     };
     load();
 
@@ -79,6 +91,11 @@ export function ChatClient({ conversation, userId }: Props) {
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
+          // A new message arrived while this chat is open on screen — count
+          // it as read immediately instead of waiting for the next visit.
+          if (newMsg.sender_id !== userId) {
+            markIncomingAsRead();
+          }
         },
       )
       .subscribe();
@@ -86,7 +103,7 @@ export function ChatClient({ conversation, userId }: Props) {
     return () => {
       channel.unsubscribe();
     };
-  }, [conversation.id]);
+  }, [conversation.id, userId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
