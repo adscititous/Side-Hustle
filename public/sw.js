@@ -23,15 +23,27 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+  const { request } = event;
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+
+  // Full page loads and API responses carry per-user data (profile,
+  // messages, listings) — never cache or serve those from cache, so a
+  // shared device can never show one person's page to the next person.
+  // Only static assets (JS/CSS/images/fonts) get cached.
+  if (request.mode === "navigate" || url.pathname.startsWith("/api/")) {
+    event.respondWith(fetch(request));
+    return;
+  }
 
   event.respondWith(
-    fetch(event.request)
+    fetch(request)
       .then((response) => {
         const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
         return response;
       })
-      .catch(() => caches.match(event.request))
+      .catch(() => caches.match(request))
   );
 });
