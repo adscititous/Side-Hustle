@@ -12,14 +12,31 @@ interface Props {
   initialListings: Listing[];
 }
 
+type SortOrder = "newest" | "price_asc" | "price_desc";
+
 const ALL = "all";
 const HERO_IMAGE = "/hero-campus.jpg";
+
+const PRICE_BUCKETS: { label: string; min: number | null; max: number | null }[] = [
+  { label: "Under ₹200", min: null, max: 200 },
+  { label: "₹200–500", min: 200, max: 500 },
+  { label: "₹500–1000", min: 500, max: 1000 },
+  { label: "₹1000–2000", min: 1000, max: 2000 },
+  { label: "₹2000+", min: 2000, max: null },
+];
+
+const SORT_OPTIONS: { value: SortOrder; label: string }[] = [
+  { value: "newest", label: "Newest" },
+  { value: "price_asc", label: "Price: Low to High" },
+  { value: "price_desc", label: "Price: High to Low" },
+];
 
 export function FeedClient({ initialListings }: Props) {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>(ALL);
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
   const { favoritedIds, toggleFavorite } = useFavorites();
 
   const categories: { value: string; label: string }[] = [
@@ -48,6 +65,15 @@ export function FeedClient({ initialListings }: Props) {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialListings, activeCategory, search, min, max]);
+
+  const sorted = useMemo(() => {
+    if (sortOrder === "newest") return filtered;
+    const copy = [...filtered];
+    copy.sort((a, b) =>
+      sortOrder === "price_asc" ? a.price - b.price : b.price - a.price,
+    );
+    return copy;
+  }, [filtered, sortOrder]);
 
   useEffect(() => {
     if (!search.trim()) return;
@@ -82,6 +108,27 @@ export function FeedClient({ initialListings }: Props) {
   function clearPriceFilter() {
     setMinPrice("");
     setMaxPrice("");
+  }
+
+  function isBucketActive(bucket: (typeof PRICE_BUCKETS)[number]) {
+    const bucketMin = bucket.min !== null ? String(bucket.min) : "";
+    const bucketMax = bucket.max !== null ? String(bucket.max) : "";
+    return minPrice === bucketMin && maxPrice === bucketMax;
+  }
+
+  function handleBucketClick(bucket: (typeof PRICE_BUCKETS)[number]) {
+    if (isBucketActive(bucket)) {
+      clearPriceFilter();
+      return;
+    }
+    setMinPrice(bucket.min !== null ? String(bucket.min) : "");
+    setMaxPrice(bucket.max !== null ? String(bucket.max) : "");
+    track("Price Bucket Selected", { label: bucket.label });
+  }
+
+  function handleSortChange(value: SortOrder) {
+    setSortOrder(value);
+    track("Sort Changed", { sort: value });
   }
 
   return (
@@ -184,6 +231,23 @@ export function FeedClient({ initialListings }: Props) {
           ))}
         </div>
 
+        <div className="mb-3 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          {PRICE_BUCKETS.map((bucket) => (
+            <button
+              key={bucket.label}
+              type="button"
+              onClick={() => handleBucketClick(bucket)}
+              className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
+                isBucketActive(bucket)
+                  ? "bg-brand-600 text-white shadow-sm"
+                  : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50"
+              }`}
+            >
+              {bucket.label}
+            </button>
+          ))}
+        </div>
+
         <div className="mb-6 flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium text-stone-500">
             Price (₹)
@@ -216,6 +280,21 @@ export function FeedClient({ initialListings }: Props) {
               Clear
             </button>
           )}
+
+          <div className="ml-auto flex items-center gap-1.5">
+            <span className="text-xs font-medium text-stone-500">Sort</span>
+            <select
+              value={sortOrder}
+              onChange={(e) => handleSortChange(e.target.value as SortOrder)}
+              className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {filtered.length === 0 ? (
@@ -236,7 +315,7 @@ export function FeedClient({ initialListings }: Props) {
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filtered.map((listing) => (
+            {sorted.map((listing) => (
               <ListingCard
                 key={listing.id}
                 listing={listing}
