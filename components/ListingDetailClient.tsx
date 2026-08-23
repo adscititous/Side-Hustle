@@ -14,6 +14,7 @@ import {
 } from "@/types";
 import toast from "react-hot-toast";
 import { track } from "@/lib/mixpanel";
+import { useFavorites } from "@/lib/useFavorites";
 
 interface Props {
   listing: Listing;
@@ -29,6 +30,8 @@ export function ListingDetailClient({ listing, reviews }: Props) {
   const [showReviews, setShowReviews] = useState(false);
   const router = useRouter();
   const supabase = createClient(session);
+  const { favoritedIds, toggleFavorite } = useFavorites();
+  const isFavorited = favoritedIds.has(listing.id);
 
   useEffect(() => {
     if (!user) {
@@ -149,7 +152,29 @@ export function ListingDetailClient({ listing, reviews }: Props) {
       </button>
 
       <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-        <div className="aspect-[16/10] overflow-hidden bg-stone-100">
+        <div className="relative aspect-[16/10] overflow-hidden bg-stone-100">
+          <button
+            type="button"
+            onClick={() => toggleFavorite(listing.id)}
+            aria-label={
+              isFavorited ? "Remove from favourites" : "Save to favourites"
+            }
+            className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition hover:bg-black/60"
+          >
+            <svg
+              className={`h-5 w-5 ${isFavorited ? "text-red-500" : "text-white"}`}
+              viewBox="0 0 24 24"
+              fill={isFavorited ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 21s-6.716-4.35-9.428-8.06C.688 10.24 1.03 6.5 4.03 4.86c2.36-1.29 5.06-.5 6.97 1.6 1.91-2.1 4.61-2.89 6.97-1.6 3 1.64 3.342 5.38 1.458 8.08C18.716 16.65 12 21 12 21z"
+              />
+            </svg>
+          </button>
           {listing.images.length > 0 ? (
             <img
               src={listing.images[selectedImage]}

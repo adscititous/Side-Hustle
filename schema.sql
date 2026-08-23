@@ -161,6 +161,29 @@ create policy "Buyers can create reviews"
   on public.reviews for insert
   with check (reviewer_id = public.clerk_profile_id());
 
+-- 5b. FAVORITES
+create table if not exists public.favorites (
+  id uuid primary key default gen_random_uuid(),
+  profile_id uuid not null references public.profiles(id) on delete cascade,
+  listing_id uuid not null references public.listings(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique(profile_id, listing_id)
+);
+
+alter table public.favorites enable row level security;
+
+create policy "Users can view their own favorites"
+  on public.favorites for select
+  using (profile_id = public.clerk_profile_id());
+
+create policy "Users can add their own favorites"
+  on public.favorites for insert
+  with check (profile_id = public.clerk_profile_id());
+
+create policy "Users can remove their own favorites"
+  on public.favorites for delete
+  using (profile_id = public.clerk_profile_id());
+
 -- 6. STORAGE BUCKET for listing images
 insert into storage.buckets (id, name, public) values ('listing-images', 'listing-images', true)
 on conflict (id) do nothing;

@@ -104,6 +104,31 @@ export function Navbar() {
           {!isLoaded ? null : user ? (
             <>
               <Link
+                href="/favorites"
+                aria-label="Favourites"
+                title="Favourites"
+                className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                  pathname === "/favorites"
+                    ? "bg-brand-100 text-brand-700"
+                    : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+                }`}
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 21s-6.716-4.35-9.428-8.06C.688 10.24 1.03 6.5 4.03 4.86c2.36-1.29 5.06-.5 6.97 1.6 1.91-2.1 4.61-2.89 6.97-1.6 3 1.64 3.342 5.38 1.458 8.08C18.716 16.65 12 21 12 21z"
+                  />
+                </svg>
+              </Link>
+
+              <Link
                 href="/messages"
                 aria-label="Messages"
                 title="Messages"

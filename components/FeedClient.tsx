@@ -6,6 +6,7 @@ import type { Listing, Category } from "@/types";
 import { CATEGORY_LABELS, CATEGORY_ICONS } from "@/types";
 import { ListingCard } from "@/components/ListingCard";
 import { track } from "@/lib/mixpanel";
+import { useFavorites } from "@/lib/useFavorites";
 
 interface Props {
   initialListings: Listing[];
@@ -17,6 +18,7 @@ const HERO_IMAGE = "/hero-campus.jpg";
 export function FeedClient({ initialListings }: Props) {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>(ALL);
+  const { favoritedIds, toggleFavorite } = useFavorites();
 
   const categories: { value: string; label: string }[] = [
     { value: ALL, label: "All" },
@@ -171,7 +173,12 @@ export function FeedClient({ initialListings }: Props) {
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+              <ListingCard
+                key={listing.id}
+                listing={listing}
+                isFavorited={favoritedIds.has(listing.id)}
+                onToggleFavorite={toggleFavorite}
+              />
             ))}
           </div>
         )}

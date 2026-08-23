@@ -7,9 +7,11 @@ import { formatPrice, timeAgo } from "@/lib/utils";
 
 interface Props {
   listing: Listing;
+  isFavorited?: boolean;
+  onToggleFavorite?: (listingId: string) => void;
 }
 
-export function ListingCard({ listing }: Props) {
+export function ListingCard({ listing, isFavorited, onToggleFavorite }: Props) {
   const thumb = listing.images?.[0];
   const sellerName = listing.is_anonymous
     ? listing.seller?.pseudonym_id ?? "Anonymous"
@@ -25,6 +27,34 @@ export function ListingCard({ listing }: Props) {
           <span className="absolute left-2.5 top-2.5 z-10 rounded-full bg-stone-900/75 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
             Sample
           </span>
+        )}
+        {onToggleFavorite && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleFavorite(listing.id);
+            }}
+            aria-label={
+              isFavorited ? "Remove from favourites" : "Save to favourites"
+            }
+            className="absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition hover:bg-black/60"
+          >
+            <svg
+              className={`h-4 w-4 ${isFavorited ? "text-red-500" : "text-white"}`}
+              viewBox="0 0 24 24"
+              fill={isFavorited ? "currentColor" : "none"}
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 21s-6.716-4.35-9.428-8.06C.688 10.24 1.03 6.5 4.03 4.86c2.36-1.29 5.06-.5 6.97 1.6 1.91-2.1 4.61-2.89 6.97-1.6 3 1.64 3.342 5.38 1.458 8.08C18.716 16.65 12 21 12 21z"
+              />
+            </svg>
+          </button>
         )}
         {thumb ? (
           <img
