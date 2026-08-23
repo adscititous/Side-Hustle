@@ -66,10 +66,11 @@ export function FeedClient({ initialListings }: Props) {
         <div className="absolute inset-0 bg-gradient-to-r from-brand-900/95 via-brand-800/85 to-brand-700/40" />
         <div className="relative px-6 py-10 sm:px-10 sm:py-14">
           <h1 className="max-w-lg font-display text-2xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
-            Your Campus Marketplace, Built by GIM Students
+            Buy, Sell, Repeat — All Within GIM
           </h1>
           <p className="mt-2 max-w-md text-sm text-brand-100 sm:text-base">
-            Buy, sell, and trade with fellow GIM students
+            Textbooks, cycles, hostel stuff, and more — find it or flip it
+            without ever leaving campus.
           </p>
           <a
             href="#listings"
