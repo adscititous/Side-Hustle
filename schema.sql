@@ -41,6 +41,7 @@ create table if not exists public.listings (
   title text not null,
   description text not null,
   price numeric(10,2) not null,
+  negotiable boolean not null default false,
   category text not null check (category in ('physical_resale','handmade_creative','services','digital')),
   condition text check (condition in ('new','like_new','good','fair','poor')),
   payment_method text not null default 'UPI / Cash',
@@ -69,6 +70,10 @@ create policy "Sellers can update their own listings"
 create policy "Sellers can delete their own listings"
   on public.listings for delete
   using (seller_id = public.clerk_profile_id());
+
+-- 2b. NEGOTIABLE FLAG (migration — safe to re-run on an existing database;
+-- the create table above already includes this column for fresh setups)
+alter table public.listings add column if not exists negotiable boolean not null default false;
 
 -- 3. CONVERSATIONS
 create table if not exists public.conversations (

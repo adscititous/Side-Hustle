@@ -20,6 +20,7 @@ const listingId = params.id as string;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [negotiable, setNegotiable] = useState(false);
   const [category, setCategory] = useState<Category>("physical_resale");
   const [condition, setCondition] = useState<Condition | "">("");
   const [paymentMethod, setPaymentMethod] = useState("UPI / Cash");
@@ -48,6 +49,7 @@ const listingId = params.id as string;
         setTitle(data.title);
         setDescription(data.description);
         setPrice(data.price.toString());
+        setNegotiable(data.negotiable ?? false);
         setCategory(data.category);
         setCondition(data.condition || "");
         setPaymentMethod(data.payment_method);
@@ -115,6 +117,7 @@ if (!user) {
       title,
       description,
       price: parseFloat(price),
+      negotiable,
       category,
       condition: condition || null,
       payment_method: paymentMethod,
@@ -132,6 +135,7 @@ if (!user) {
       listing_id: listingId,
       category,
       price: parseFloat(price),
+      negotiable,
       condition: condition || undefined,
       is_anonymous: isAnonymous,
     });
@@ -274,6 +278,15 @@ if (!user) {
               placeholder="150"
               className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             />
+            <label className="mt-2 flex items-center gap-1.5 text-xs text-stone-600">
+              <input
+                type="checkbox"
+                checked={negotiable}
+                onChange={(e) => setNegotiable(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-stone-300 text-brand-600 focus:ring-brand-400"
+              />
+              Open to negotiation
+            </label>
           </div>
 
           <div>

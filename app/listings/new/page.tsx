@@ -18,6 +18,7 @@ export default function NewListingPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
+  const [negotiable, setNegotiable] = useState(false);
   const [category, setCategory] = useState<Category>("physical_resale");
   const [condition, setCondition] = useState<Condition | "">("");
   const [paymentMethod, setPaymentMethod] = useState("UPI / Cash");
@@ -78,6 +79,7 @@ export default function NewListingPage() {
       title,
       description,
       price: parseFloat(price),
+      negotiable,
       category,
       condition: condition || null,
       payment_method: paymentMethod,
@@ -94,6 +96,7 @@ export default function NewListingPage() {
     track("Listing Created", {
       category,
       price: parseFloat(price),
+      negotiable,
       condition: condition || undefined,
       is_anonymous: isAnonymous,
       image_count: imageUrls.length,
@@ -204,6 +207,15 @@ export default function NewListingPage() {
               placeholder="150"
               className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
             />
+            <label className="mt-2 flex items-center gap-1.5 text-xs text-stone-600">
+              <input
+                type="checkbox"
+                checked={negotiable}
+                onChange={(e) => setNegotiable(e.target.checked)}
+                className="h-3.5 w-3.5 rounded border-stone-300 text-brand-600 focus:ring-brand-400"
+              />
+              Open to negotiation
+            </label>
           </div>
 
           <div>

@@ -38,9 +38,16 @@ export function ListingCard({ listing }: Props) {
           </div>
         )}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-        <span className="absolute bottom-2.5 left-3 text-base font-bold text-white drop-shadow-sm">
-          {formatPrice(listing.price)}
-        </span>
+        <div className="absolute bottom-2.5 left-3 flex items-center gap-1.5">
+          <span className="text-base font-bold text-white drop-shadow-sm">
+            {formatPrice(listing.price)}
+          </span>
+          {listing.negotiable && (
+            <span className="rounded-full bg-white/90 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-brand-700 backdrop-blur-sm">
+              Negotiable
+            </span>
+          )}
+        </div>
       </div>
       <div className="p-3.5">
         <h3 className="text-sm font-semibold leading-snug text-stone-800 line-clamp-2">

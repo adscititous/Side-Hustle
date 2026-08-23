@@ -23,6 +23,7 @@ export interface Listing {
   title: string;
   description: string;
   price: number;
+  negotiable: boolean;
   category: Category;
   condition: Condition | null;
   payment_method: string;

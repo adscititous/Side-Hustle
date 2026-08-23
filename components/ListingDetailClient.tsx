@@ -204,9 +204,16 @@ console.log("Conversation ID:", convId);
                 {listing.condition && ` · ${CONDITION_LABELS[listing.condition]}`}
               </p>
             </div>
-            <span className="shrink-0 text-xl font-bold text-brand-700">
-              {formatPrice(listing.price)}
-            </span>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <span className="text-xl font-bold text-brand-700">
+                {formatPrice(listing.price)}
+              </span>
+              {listing.negotiable && (
+                <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700">
+                  Negotiable
+                </span>
+              )}
+            </div>
           </div>
 
           {listing.is_sample && (
