@@ -396,11 +396,15 @@ if (signUp.status === "complete") {
                 <input
                   type="password"
                   required
-                  minLength={6}
+                  minLength={8}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
                 />
+                <p className="mt-1.5 text-xs text-stone-400">
+                  At least 8 characters. Avoid common or previously breached
+                  passwords — we&apos;ll reject those for your safety.
+                </p>
               </div>
 
               <button
@@ -526,7 +530,7 @@ if (signUp.status === "complete") {
     <input
       type={showPassword ? "text" : "password"}
       required
-      minLength={6}
+      minLength={mode === "signup" ? 8 : undefined}
       value={password}
       onChange={(e) => setPassword(e.target.value)}
       className="w-full rounded-lg border border-stone-300 px-3 py-2 pr-16 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
@@ -540,6 +544,12 @@ if (signUp.status === "complete") {
       {showPassword ? "Hide" : "Show"}
     </button>
   </div>
+  {mode === "signup" && (
+    <p className="mt-1.5 text-xs text-stone-400">
+      At least 8 characters. Avoid common or previously breached passwords —
+      we&apos;ll reject those for your safety.
+    </p>
+  )}
 </div>
           <button
             type="submit"
