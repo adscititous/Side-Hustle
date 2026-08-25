@@ -52,11 +52,17 @@ export function FeedClient({ initialListings }: Props) {
   const max = maxPrice ? parseFloat(maxPrice) : null;
 
   const priceBounds = useMemo(() => {
+    // Default to a generous ceiling rather than pinning to whatever the
+    // (currently thin) live listing data happens to top out at — a campus
+    // marketplace can list anything from stationery to a bike, and the
+    // slider shouldn't visually imply the range is capped at "whatever's
+    // for sale today." It still grows past this if real listings exceed it.
+    const BASELINE_MAX = 5000;
     const prices = initialListings
       .map((l) => l.price)
       .filter((p) => Number.isFinite(p) && p >= 0);
     const dataMax = prices.length ? Math.max(...prices) : 0;
-    const roundedMax = Math.max(1000, Math.ceil((dataMax || 1000) / 100) * 100);
+    const roundedMax = Math.max(BASELINE_MAX, Math.ceil(dataMax / 500) * 500);
     return { min: 0, max: roundedMax };
   }, [initialListings]);
 
@@ -251,10 +257,10 @@ export function FeedClient({ initialListings }: Props) {
           ))}
         </div>
 
-        <div className="mb-6 rounded-2xl border border-brand-100 bg-brand-50/70 p-4 shadow-sm">
-          <div className="mb-3 flex items-center gap-1.5">
+        <div className="mb-6 rounded-xl border border-brand-100 bg-brand-50/60 p-3">
+          <div className="mb-2 flex items-center gap-1.5">
             <svg
-              className="h-3.5 w-3.5 text-brand-600"
+              className="h-3 w-3 text-brand-500"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -266,18 +272,18 @@ export function FeedClient({ initialListings }: Props) {
                 d="M3 4h18M6 9h12M10 14h4M11 19h2"
               />
             </svg>
-            <span className="text-xs font-bold uppercase tracking-wide text-brand-700">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-brand-600">
               Filter by price
             </span>
           </div>
 
-          <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          <div className="mb-3 flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
             {PRICE_BUCKETS.map((bucket) => (
               <button
                 key={bucket.label}
                 type="button"
                 onClick={() => handleBucketClick(bucket)}
-                className={`whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-semibold transition ${
+                className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   isBucketActive(bucket)
                     ? "bg-brand-600 text-white shadow-sm"
                     : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50"
@@ -288,7 +294,7 @@ export function FeedClient({ initialListings }: Props) {
             ))}
           </div>
 
-          <div className="px-1.5">
+          <div className="px-1">
             <PriceRangeSlider
               min={priceBounds.min}
               max={priceBounds.max}
@@ -298,8 +304,8 @@ export function FeedClient({ initialListings }: Props) {
             />
           </div>
 
-          <div className="mt-2 flex items-center justify-between">
-            <span className="text-sm font-bold text-stone-800">
+          <div className="mt-1 flex items-center justify-between">
+            <span className="text-xs font-semibold text-stone-600">
               ₹{sliderValue[0]} – ₹{sliderValue[1]}
               {sliderValue[1] >= priceBounds.max ? "+" : ""}
             </span>
@@ -307,7 +313,7 @@ export function FeedClient({ initialListings }: Props) {
               <button
                 type="button"
                 onClick={clearPriceFilter}
-                className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+                className="text-xs font-medium text-brand-600 hover:text-brand-700"
               >
                 Clear
               </button>

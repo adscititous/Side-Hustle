@@ -89,10 +89,11 @@ export function PriceRangeSlider({ min, max, step = 50, value, onChange }: Props
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
       onClick={handleTrackClick}
-      className="relative h-1.5 cursor-pointer touch-none rounded-full bg-stone-200 select-none"
+      className="relative flex h-4 items-center cursor-pointer touch-none select-none"
     >
+      <div className="pointer-events-none absolute inset-x-0 h-1 rounded-full bg-stone-200" />
       <div
-        className="absolute h-1.5 rounded-full bg-brand-600"
+        className="pointer-events-none absolute h-1 rounded-full bg-brand-600"
         style={{ left: `${minPct}%`, width: `${Math.max(maxPct - minPct, 0)}%` }}
       />
       <button
@@ -105,7 +106,7 @@ export function PriceRangeSlider({ min, max, step = 50, value, onChange }: Props
         tabIndex={0}
         onPointerDown={handlePointerDown("min")}
         onKeyDown={handleKeyDown("min")}
-        className="absolute top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-brand-600 bg-white shadow-md transition hover:scale-110 focus:outline-none focus:ring-2 focus:ring-brand-200 active:scale-110"
+        className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-brand-600 bg-white shadow transition hover:scale-110 focus:outline-none focus:ring-2 focus:ring-brand-200 active:scale-110"
         style={{ left: `${minPct}%` }}
       />
       <button
@@ -118,7 +119,7 @@ export function PriceRangeSlider({ min, max, step = 50, value, onChange }: Props
         tabIndex={0}
         onPointerDown={handlePointerDown("max")}
         onKeyDown={handleKeyDown("max")}
-        className="absolute top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-brand-600 bg-white shadow-md transition hover:scale-110 focus:outline-none focus:ring-2 focus:ring-brand-200 active:scale-110"
+        className="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-brand-600 bg-white shadow transition hover:scale-110 focus:outline-none focus:ring-2 focus:ring-brand-200 active:scale-110"
         style={{ left: `${maxPct}%` }}
       />
     </div>
