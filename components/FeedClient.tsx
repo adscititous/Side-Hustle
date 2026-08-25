@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Listing, Category } from "@/types";
 import { CATEGORY_LABELS, CATEGORY_ICONS } from "@/types";
 import { ListingCard } from "@/components/ListingCard";
+import { PriceRangeSlider } from "@/components/PriceRangeSlider";
 import { track } from "@/lib/mixpanel";
 import { useFavorites } from "@/lib/useFavorites";
 
@@ -49,6 +50,20 @@ export function FeedClient({ initialListings }: Props) {
 
   const min = minPrice ? parseFloat(minPrice) : null;
   const max = maxPrice ? parseFloat(maxPrice) : null;
+
+  const priceBounds = useMemo(() => {
+    const prices = initialListings
+      .map((l) => l.price)
+      .filter((p) => Number.isFinite(p) && p >= 0);
+    const dataMax = prices.length ? Math.max(...prices) : 0;
+    const roundedMax = Math.max(1000, Math.ceil((dataMax || 1000) / 100) * 100);
+    return { min: 0, max: roundedMax };
+  }, [initialListings]);
+
+  const sliderValue: [number, number] = [
+    min !== null && !Number.isNaN(min) ? Math.max(priceBounds.min, min) : priceBounds.min,
+    max !== null && !Number.isNaN(max) ? Math.min(priceBounds.max, max) : priceBounds.max,
+  ];
 
   const filtered = useMemo(() => {
     return initialListings.filter((l) => {
@@ -129,6 +144,11 @@ export function FeedClient({ initialListings }: Props) {
   function handleSortChange(value: SortOrder) {
     setSortOrder(value);
     track("Sort Changed", { sort: value });
+  }
+
+  function handleSliderChange([newMin, newMax]: [number, number]) {
+    setMinPrice(newMin <= priceBounds.min ? "" : String(newMin));
+    setMaxPrice(newMax >= priceBounds.max ? "" : String(newMax));
   }
 
   return (
@@ -231,70 +251,83 @@ export function FeedClient({ initialListings }: Props) {
           ))}
         </div>
 
-        <div className="mb-3 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
-          {PRICE_BUCKETS.map((bucket) => (
-            <button
-              key={bucket.label}
-              type="button"
-              onClick={() => handleBucketClick(bucket)}
-              className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
-                isBucketActive(bucket)
-                  ? "bg-brand-600 text-white shadow-sm"
-                  : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50"
-              }`}
+        <div className="mb-6 rounded-2xl border border-brand-100 bg-brand-50/70 p-4 shadow-sm">
+          <div className="mb-3 flex items-center gap-1.5">
+            <svg
+              className="h-3.5 w-3.5 text-brand-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.5}
             >
-              {bucket.label}
-            </button>
-          ))}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 4h18M6 9h12M10 14h4M11 19h2"
+              />
+            </svg>
+            <span className="text-xs font-bold uppercase tracking-wide text-brand-700">
+              Filter by price
+            </span>
+          </div>
+
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            {PRICE_BUCKETS.map((bucket) => (
+              <button
+                key={bucket.label}
+                type="button"
+                onClick={() => handleBucketClick(bucket)}
+                className={`whitespace-nowrap rounded-full px-3.5 py-2 text-xs font-semibold transition ${
+                  isBucketActive(bucket)
+                    ? "bg-brand-600 text-white shadow-sm"
+                    : "bg-white text-stone-600 ring-1 ring-stone-200 hover:bg-stone-50"
+                }`}
+              >
+                {bucket.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="px-1.5">
+            <PriceRangeSlider
+              min={priceBounds.min}
+              max={priceBounds.max}
+              step={priceBounds.max > 2000 ? 100 : 50}
+              value={sliderValue}
+              onChange={handleSliderChange}
+            />
+          </div>
+
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-sm font-bold text-stone-800">
+              ₹{sliderValue[0]} – ₹{sliderValue[1]}
+              {sliderValue[1] >= priceBounds.max ? "+" : ""}
+            </span>
+            {(minPrice || maxPrice) && (
+              <button
+                type="button"
+                onClick={clearPriceFilter}
+                className="text-xs font-semibold text-brand-600 hover:text-brand-700"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-medium text-stone-500">
-            Price (₹)
-          </span>
-          <input
-            type="number"
-            inputMode="decimal"
-            min={0}
-            placeholder="Min"
-            value={minPrice}
-            onChange={(e) => setMinPrice(e.target.value)}
-            className="w-24 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
-          />
-          <span className="text-stone-300">–</span>
-          <input
-            type="number"
-            inputMode="decimal"
-            min={0}
-            placeholder="Max"
-            value={maxPrice}
-            onChange={(e) => setMaxPrice(e.target.value)}
-            className="w-24 rounded-full border border-stone-200 bg-white px-3 py-1.5 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
-          />
-          {(minPrice || maxPrice) && (
-            <button
-              type="button"
-              onClick={clearPriceFilter}
-              className="text-xs font-medium text-brand-600 hover:text-brand-700"
-            >
-              Clear
-            </button>
-          )}
-
-          <div className="ml-auto flex items-center gap-1.5">
-            <span className="text-xs font-medium text-stone-500">Sort</span>
-            <select
-              value={sortOrder}
-              onChange={(e) => handleSortChange(e.target.value as SortOrder)}
-              className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="mb-6 flex items-center justify-end gap-1.5">
+          <span className="text-xs font-medium text-stone-500">Sort</span>
+          <select
+            value={sortOrder}
+            onChange={(e) => handleSortChange(e.target.value as SortOrder)}
+            className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs font-medium text-stone-600 outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {filtered.length === 0 ? (
