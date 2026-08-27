@@ -135,11 +135,25 @@ async function handleGoogleSignIn() {
     // (accounts.gimbazar.in) as an intermediate hop, and that domain has no
     // DNS record for this instance — Clerk's own dashboard confirms "Account
     // portal is not supported with your current domain configuration."
-    // `clerk.client.signIn.authenticateWithRedirect()` redirects straight to
+    // `clerk.client...authenticateWithRedirect()` redirects straight to
     // Google with no detour through that broken domain — confirmed working
     // end-to-end against production (redirects to Google's real consent
     // screen with the correct client ID and callback URL).
-    await clerk.client.signIn.authenticateWithRedirect({
+    //
+    // Calling this on the `signIn` resource specifically (as opposed to
+    // `signUp`) only works for accounts that already exist. Clerk's own
+    // production logs confirmed the failure mode for a brand-new Google
+    // user: the OAuth callback comes back with
+    // `oauth_callback.failed { reason: "external_account_not_found",
+    // flow: "sign_in" }`, which is exactly the "flash of the sign-in UI,
+    // then dumped back to signed-out" bug reported by testers — first-time
+    // Google sign-in failed outright, and only succeeded on a later retry
+    // once Clerk had a sign_up record to transfer the external account
+    // onto. Using `signUp.authenticateWithRedirect()` here instead is
+    // Clerk's documented "sign in or sign up" pattern for OAuth: it signs
+    // an existing account straight in, and creates + signs in a new one,
+    // in a single pass — no retry needed either way.
+    await clerk.client.signUp.authenticateWithRedirect({
       strategy: "oauth_google",
       redirectUrl: "/auth/callback",
       redirectUrlComplete: "/",
